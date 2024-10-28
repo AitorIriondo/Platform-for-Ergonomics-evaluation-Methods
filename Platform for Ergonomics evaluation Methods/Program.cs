@@ -1,5 +1,8 @@
+using Platform_for_Ergonomics_evaluation_Methods;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;
+
+IPSComm.Start();
 
 var builder = WebApplication.CreateBuilder(args);
 
