@@ -1,8 +1,17 @@
 using Platform_for_Ergonomics_evaluation_Methods;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;
+using System.Diagnostics;
 
 IPSComm.Start();
+ManikinTimeline manikinTimeline = new ManikinTimeline("c:/ergoexporttest/PEMtest/Male_w=78_s=1756.bin", "c:/ergoexporttest/PEMtest/Family 1_ctrlPts.bin");
+for(int i = 0; i < 10; i++)
+{
+    manikinTimeline.SetTime(i);
+    Debug.WriteLine("RHForce at t " + i +": " + manikinTimeline.GetRightHandForce());
+
+}
+//Environment.Exit(0);
 
 var builder = WebApplication.CreateBuilder(args);
 

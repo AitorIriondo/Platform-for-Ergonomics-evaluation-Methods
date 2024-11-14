@@ -4,7 +4,7 @@ local JSON = require("json")
 local peemDir = os.getenv("USERPROFILE").."\\AppData\\Local\\Peem\\"
 local tmpDir = peemDir.."\\ipscomm_tmp\\"
 local function sendData(data)
-  local filename = comDir..os.time().."_"..os.clock()..".txt"
+  local filename = tmpDir..os.time().."_"..os.clock()..".txt"
   print(filename)
   local file = io.open(filename, "w")
   if not file then
