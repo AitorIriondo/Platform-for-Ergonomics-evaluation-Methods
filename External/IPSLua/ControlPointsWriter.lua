@@ -64,6 +64,7 @@ end
 ---
 --@param #ControlPointsWriter self 
 function ControlPointsWriter:finalize()
+  print("self.filename",self.filename)
   local file=io.open(self.filename,"wb")
   local metaJson = JSON.encode(self.meta)
   self.bufferWriter:reset()

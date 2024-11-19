@@ -25,7 +25,8 @@ local peemComm = {
       age = 100,
       time=os.date("%Y-%m-%d %H:%M:%S")
     }
-    sendData(JSON.encode(something))
+--    sendData(JSON.encode(something))
+    sendData("Rava")
   end
 }
 

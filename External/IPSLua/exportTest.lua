@@ -1,7 +1,11 @@
 local JSON=require("json")
 require("BufferWriter")
-require("ControlPointWriter")
-local timelineReplay = Ips.getProcessRoot():findFirstExactMatch("Replay - [14:55:40]"):toTimelineReplay()
+require("ControlPointsWriter")
+
+local timelineReplay = nil
+if Ips.getS then
+end
+--Ips.getProcessRoot():findFirstExactMatch("Replay - [14:55:40]"):toTimelineReplay()
 local peemDir = os.getenv("USERPROFILE").."\\AppData\\Local\\Peem\\"
 local tmpDir = peemDir
 local outdir = "C:/ergoexporttest/PEMtest/"

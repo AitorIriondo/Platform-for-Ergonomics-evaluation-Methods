@@ -16,6 +16,7 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">
     function fetchLatestMessage() {
+        console.log("hej")
         $.ajax({
             url: '@Url.Action("GetLatestJsonMessage", "Home")',
             method: 'GET',
@@ -28,6 +29,6 @@
         });
     }
 
-    // Fetch the latest message every 5 seconds
-    setInterval(fetchLatestMessage, 5000);
+    // Fetch the latest message every n milliseconds
+    setInterval(fetchLatestMessage, 1000);
 </script>

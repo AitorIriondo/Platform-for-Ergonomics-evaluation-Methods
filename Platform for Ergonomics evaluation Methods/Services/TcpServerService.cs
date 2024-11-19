@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;
 using Platform_for_Ergonomics_evaluation_Methods.Models;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
+using System.Diagnostics;
 
 namespace Platform_for_Ergonomics_evaluation_Methods.Services
 {
@@ -32,7 +33,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
         private async Task ListenForClients()
         {
             _tcpListener.Start();
-            Console.WriteLine("TCP Server is running...");
+            Debug.WriteLine("TCP Server is running...");
 
             while (true)
             {
@@ -49,8 +50,23 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
                 using (NetworkStream stream = client.GetStream())
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    string jsonMessage = await reader.ReadToEndAsync();
-                    Console.WriteLine("Received JSON message: " + jsonMessage);
+                    string receivedText = await reader.ReadToEndAsync();
+                    string jsonMessage = receivedText;
+                    // When using a browser or curl we need to get rid of the header
+                    if (receivedText.StartsWith("POST"))
+                    {
+                        string[] splitters = new string[] { "\n\n", "\r\n\r\n" };
+                        foreach (string splitter in splitters)
+                        {
+                            int splitPos = receivedText.IndexOf(splitter);
+                            if (splitPos > 0)
+                            {
+                                jsonMessage = receivedText.Substring(splitPos + splitter.Length);
+                            }
+
+                        }
+                    }
+                    Debug.WriteLine("Received JSON message: " + jsonMessage);
 
                     // Store the latest message for the web UI
                     _messageStorageService.StoreMessage(jsonMessage);
@@ -64,7 +80,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error handling client: {ex.Message}");
+                Debug.WriteLine($"Error handling client: {ex.Message}");
             }
             finally
             {

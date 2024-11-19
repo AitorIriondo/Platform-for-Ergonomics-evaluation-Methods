@@ -42,6 +42,7 @@ class ManikinControlPointsTimeline{
 				torques[j].Add(fileReader.readVector3());
             }
 		}
+		fileReader.Close();
     }
     int GetFrameIdxAtTime(float time)
 	{
