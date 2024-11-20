@@ -54,7 +54,7 @@
 <div id="graphMain"></div>
 <div class="slider-container">
     <label class="slider-label">
-        Percent Capable: <span id="percentSliderValue" class="slider-value">75%</span>
+        MAS percentile: <span id="percentSliderValue" class="slider-value">75</span>
     </label>
     <input class="slider" type="range" id="percentSlider" min="0" max="100" value="75">
 </div>
@@ -122,7 +122,8 @@
                             position: "right",
                             ticks: {
                                 color: graphData.labels.length > 2 ? "darkgray" : "white"
-                            }
+                            },
+                            beginAtZero: true
 
                         },
                         x: {
@@ -146,7 +147,7 @@
     const percentSlider = document.getElementById('percentSlider');
     percentSlider.valLabel = document.getElementById('percentSliderValue');
     percentSlider.addEventListener('input', function () {
-        this.valLabel.textContent = this.value + "%";
+        this.valLabel.textContent = this.value + "";
         refresh();
     });
 

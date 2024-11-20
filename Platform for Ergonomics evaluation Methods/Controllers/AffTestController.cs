@@ -22,9 +22,9 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         Aff.Input GetAffInput(ManikinTimeline manikinTimeline)
         {
             Aff.Input input = new Aff.Input();
-            input.bodyMass = 78;
-            input.stature = 1.756f;
-            input.female = false;
+            input.bodyMass = 70;
+            input.stature = 1.63f;
+            input.female = true;
             input.C7T1 = Ips2Aff(manikinTimeline.jointC6C7.pos());
             input.L5S1 = Ips2Aff(manikinTimeline.jointL5S1.pos());
             input.percentCapable = 75;
