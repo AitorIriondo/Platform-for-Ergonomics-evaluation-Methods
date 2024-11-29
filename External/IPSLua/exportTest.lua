@@ -1,3 +1,12 @@
+function includeThisPath()
+  local filename = debug.getinfo(2, "S").source:sub(2)
+  local path = filename:sub(0, filename:match(".*".."\\".."()")-1)
+  if(not package.path:find(path)) then
+    package.path = package.path..';'..path..'?.lua;'
+  end
+end
+includeThisPath()
+
 local JSON=require("json")
 require("BufferWriter")
 require("ControlPointsWriter")

@@ -8,6 +8,13 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
 {
     public class AffTestController : Controller
     {
+        private readonly ILogger<HomeController> _logger;
+        private readonly MessageStorageService _messageStorageService;
+        public AffTestController(ILogger<HomeController> logger, MessageStorageService messageStorageService) {
+            _logger = logger;
+            _messageStorageService = messageStorageService;
+
+        }
         public IActionResult Index()
         {
             ViewData["Message"] = "Nisse";
@@ -60,7 +67,10 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetGraphValArrs(float percentCapable = 71, float demoLoadPercent = 100)
         {
-            ManikinTimeline manikinTimeline = new ManikinTimeline("c:/ergoexporttest/PEMtest/Male_w=78_s=1756.bin", "c:/ergoexporttest/PEMtest/Family 1_ctrlPts.bin");
+            string dir = "C:/Users/lebm/AppData/Local/PEM/IpsErgoExportTest/";
+            string msg = _messageStorageService.GetLatestMessage();
+            Debug.WriteLine(msg);
+            ManikinTimeline manikinTimeline = new ManikinTimeline(dir + "Male_w=78_s=1756.bin", dir + "Family 1.ctrlpts");
             List<float> timestamps = new List<float>();
             float t = 0;
             int frame = 0;
