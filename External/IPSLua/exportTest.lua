@@ -3,19 +3,29 @@ require("BufferWriter")
 require("ControlPointsWriter")
 
 local timelineReplay = nil
-if Ips.getS then
+if Ips.getSelection() then
+  timelineReplay = Ips.getSelection():toTimelineReplay()
 end
---Ips.getProcessRoot():findFirstExactMatch("Replay - [14:55:40]"):toTimelineReplay()
-local peemDir = os.getenv("USERPROFILE").."\\AppData\\Local\\Peem\\"
-local tmpDir = peemDir
-local outdir = "C:/ergoexporttest/PEMtest/"
+assert(timelineReplay, "You need to select a replay")
+  
+local pemDir = string.gsub(os.getenv("LOCALAPPDATA"),"\\","/").."/PEM/"
+local outdir = pemDir.."IpsErgoExportTest/"
 local t = os.clock()
 local config={
   outdir=outdir
 };
-FileUtils.mkdir(config.outdir);
-local HisIpsDir = os.getenv("HISIPSDIR")
-FileUtils.putContents(HisIpsDir.."ergoexportcfg.json", JSON.encode(config));
+os.execute("mkdir "..string.gsub(config.outdir, "/","\\"))
+
+---
+--@return #string filename
+local function putFileContents(filename, contents)
+  local f=io.open(filename,"w")
+  f:write(contents)
+  f:close()
+  return filename
+end
+
+putFileContents(os.getenv("TEMP").."/immaergoexportcfg.json", JSON.encode(config));
 timelineReplay:computeErgonomicScore("Exporttest",0,timelineReplay:getFinalTime())
 
 ---
@@ -43,7 +53,7 @@ local families = getActingFamilies(timelineReplay)
 --@field #list<#ControlPointsWriter>
 local cpws={}
 for i=1, #families do
-  table.insert(cpws,ControlPointsWriter.new(families[i], outdir..families[i]:getVisualization():getLabel().."_ctrlPts.bin"))
+  table.insert(cpws,ControlPointsWriter.new(families[i], outdir..families[i]:getVisualization():getLabel()..".ctrlpts"))
 end
 
 local dur=timelineReplay:getFinalTime()
@@ -60,4 +70,15 @@ end
 
 
 print("Exported to ",config.outdir, ". Time: ", os.clock()-t )
+local pemData = {
+  src = "IPS",
+  type = "ManikinTimeline",
+  dir=outdir
+}
 
+local cmd="curl -X POST http://127.0.0.1:5000 --data-binary \""..string.gsub(JSON.encode(pemData), "\"", "\\\"").."\" --no-buffer --max-time 1" 
+print(cmd)
+local process = io.popen(cmd)
+local resultJson=process:read("*a")
+process:close()
+print(resultJson)
