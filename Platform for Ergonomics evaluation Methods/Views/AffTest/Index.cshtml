@@ -51,7 +51,7 @@
     }
 
 </style>
-<div id="graphMain"></div>
+<div id="graphMain">No manikin loaded. Run exportTest.lua [TODO: Change this text]</div>
 <div class="slider-container">
     <label class="slider-label">
         MAS percentile: <span id="percentSliderValue" class="slider-value">75</span>
@@ -173,6 +173,7 @@
             },
             error: function () {
                 console.log("Failed to fetch message.");
+                setTimeout(refresh, 1000);
             }
         });
     }

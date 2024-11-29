@@ -1,6 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+
+namespace IMMA;
+
 [System.Serializable]
 public class PostureData {
 	public PostureData() { 

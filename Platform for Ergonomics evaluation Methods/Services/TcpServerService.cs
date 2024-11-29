@@ -62,6 +62,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
                             if (splitPos > 0)
                             {
                                 jsonMessage = receivedText.Substring(splitPos + splitter.Length);
+                                ManikinManager.ParseMessage(jsonMessage);
                             }
 
                         }

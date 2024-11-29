@@ -4,6 +4,9 @@ using System.Numerics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
+
+namespace IMMA;
+
 public class ModelInfo {
 	public string filename;
 	public List<string> jointNames = new List<string>();

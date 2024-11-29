@@ -3,7 +3,6 @@ using Platform_for_Ergonomics_evaluation_Methods.Services;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;
 using System.Diagnostics;
 
-//IPSComm.Start();
 //Environment.Exit(0);
 
 var builder = WebApplication.CreateBuilder(args);

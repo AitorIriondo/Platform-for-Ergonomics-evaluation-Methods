@@ -30,3 +30,28 @@ public static class Matrix4x4Extension
 }
 
 
+public class MTransform
+{
+    public Vector3 pos { get { return matrix.GetPosition(); } }
+    public Quaternion rot { get { return matrix.GetRotation(); } }
+    public Matrix4x4 matrix = new Matrix4x4();
+    public MTransform()
+    {
+    }
+    public bool Equals(MTransform other)
+    {
+        return other != null && other.pos == pos && other.rot == rot;
+    }
+}
+public class FrameInterpolationInfo
+{
+    public int lowIdx = 0;
+    public int highIdx = -1;
+    public float factor = 0;
+    public float time = 0;
+    public bool isApplicable()
+    {
+        return highIdx > lowIdx && factor > 0;
+    }
+}
+

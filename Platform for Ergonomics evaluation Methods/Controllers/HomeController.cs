@@ -9,6 +9,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly MessageStorageService _messageStorageService;
+        private string prevJsonMessage = "";
 
         public HomeController(ILogger<HomeController> logger, MessageStorageService messageStorageService)
         {

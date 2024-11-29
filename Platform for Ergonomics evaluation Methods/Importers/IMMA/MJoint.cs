@@ -2,34 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 
-public class ContactForceData {
-	public Vector3 mForce = Vector3.Zero;
-	public Vector3 mTorque = Vector3.Zero;
-	public int mJointIndex = -1;
+
+
+namespace IMMA;
+
+public class ContactForceData
+{
+    public Vector3 mForce = Vector3.Zero;
+    public Vector3 mTorque = Vector3.Zero;
+    public int mJointIndex = -1;
 }
 
-public class MTransform {
-	public Vector3 pos { get { return matrix.GetPosition(); } }
-	public Quaternion rot { get { return matrix.GetRotation(); } }
-	public Matrix4x4 matrix = new Matrix4x4();
-	public MTransform() {
-    }
-    public bool Equals(MTransform other) {
-		return other != null && other.pos == pos && other.rot == rot;
-    }
-}
-public class FrameInterpolationInfo {
-	public int lowIdx = 0;
-	public int highIdx = -1;
-	public float factor = 0;
-	public float time=0;
-	public bool isApplicable() {
-		return highIdx > lowIdx && factor > 0;
-	}
-}
+
 [System.Serializable]
 public class MJoint{
-	public ManikinTimeline timeline = null;
+	public IMMAManikin timeline = null;
 	public string name;
 	public MJoint parentJoint;
 	public int idx = -1;
@@ -166,78 +153,4 @@ public class MJoint{
 	}
 
 }
-public enum JointEnum {
-	Translation = 0,
-	Rotation = 1,
-	L5S1 = 2,
-	L3L4 = 3,
-	T12L1 = 4,
-	T6T7 = 5,
-	T1T2 = 6,
-	C6C7 = 7,
-	C4C5 = 8,
-	AtlantoAxial = 9,
-	Eyeside = 10,
-	LeftHip = 11,
-	LeftKnee = 12,
-	LeftAnkleRot = 13,
-	LeftAnkle = 14,
-	LeftToes = 15,
-	RightHip = 16,
-	RightKnee = 17,
-	RightAnkleRot = 18,
-	RightAnkle = 19,
-	RightToes = 20,
-	RightSC = 21,
-	RightAC = 22,
-	RightGH = 23,
-	RightShoulderRotation = 24,
-	RightElbow = 25,
-	RightWristRotation = 26,
-	LeftSC = 27,
-	LeftAC = 28,
-	LeftGH = 29,
-	LeftShoulderRotation = 30,
-	LeftElbow = 31,
-	LeftWristRotation = 32,
-	LeftWrist = 33,
-	Left_IndexCarpal = 34,
-	Left_IndexProximal = 35,
-	Left_IndexIntermediate = 36,
-	Left_IndexDistal = 37,
-	Left_MiddleCarpal = 38,
-	Left_MiddleProximal = 39,
-	Left_MiddleIntermediate = 40,
-	Left_MiddleDistal = 41,
-	Left_RingCarpal = 42,
-	Left_RingProximal = 43,
-	Left_RingIntermediate = 44,
-	Left_RingDistal = 45,
-	Left_PinkyCarpal = 46,
-	Left_PinkyProximal = 47,
-	Left_PinkyIntermediate = 48,
-	Left_PinkyDistal = 49,
-	Left_ThumbProximal = 50,
-	Left_ThumbIntermediate = 51,
-	Left_ThumbDistal = 52,
-	RightWrist = 53,
-	Right_IndexCarpal = 54,
-	Right_IndexProximal = 55,
-	Right_IndexIntermediate = 56,
-	Right_IndexDistal = 57,
-	Right_MiddleCarpal = 58,
-	Right_MiddleProximal = 59,
-	Right_MiddleIntermediate = 60,
-	Right_MiddleDistal = 61,
-	Right_RingCarpal = 62,
-	Right_RingProximal = 63,
-	Right_RingIntermediate = 64,
-	Right_RingDistal = 65,
-	Right_PinkyCarpal = 66,
-	Right_PinkyProximal = 67,
-	Right_PinkyIntermediate = 68,
-	Right_PinkyDistal = 69,
-	Right_ThumbProximal = 70,
-	Right_ThumbIntermediate = 71,
-	Right_ThumbDistal = 72
-}
+

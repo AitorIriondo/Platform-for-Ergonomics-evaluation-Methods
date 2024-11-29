@@ -6,7 +6,7 @@
     <h1 class="display-4">Platform for Ergonomics evaluation Methods [PEM]</h1>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
-
+<a href="/AffTest">AffTest</a>
 
 <h1>Latest JSON Message</h1>
 <div id="jsonMessage">
@@ -16,7 +16,6 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script type="text/javascript">
     function fetchLatestMessage() {
-        console.log("hej")
         $.ajax({
             url: '@Url.Action("GetLatestJsonMessage", "Home")',
             method: 'GET',

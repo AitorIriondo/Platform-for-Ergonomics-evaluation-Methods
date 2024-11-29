@@ -1,5 +1,5 @@
 function includeThisPath()
-  local filename = debug.getinfo(2, "S").source:sub(2)
+  local filename = debug.getinfo(2, "S").source:sub(2):gsub("/","\\")
   local path = filename:sub(0, filename:match(".*".."\\".."()")-1)
   if(not package.path:find(path)) then
     package.path = package.path..';'..path..'?.lua;'
@@ -81,7 +81,7 @@ end
 print("Exported to ",config.outdir, ". Time: ", os.clock()-t )
 local pemData = {
   src = "IPS",
-  type = "ManikinTimeline",
+  parser = "IMMAManikin",
   dir=outdir
 }
 

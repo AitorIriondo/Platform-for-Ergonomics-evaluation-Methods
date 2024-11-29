@@ -26,21 +26,21 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         {
             return new Vector3(v.Y * -1, v.X, v.Z);
         }
-        Aff.Input GetAffInput(ManikinTimeline manikinTimeline)
+        Aff.Input GetAffInput(ManikinBase manikin)
         {
             Aff.Input input = new Aff.Input();
             input.bodyMass = 70;
             input.stature = 1.63f;
             input.female = true;
-            input.C7T1 = Ips2Aff(manikinTimeline.jointC6C7.pos());
-            input.L5S1 = Ips2Aff(manikinTimeline.jointL5S1.pos());
+            input.C7T1 = Ips2Aff(manikin.GetJointPosition(JointID.C7T1));
+            input.L5S1 = Ips2Aff(manikin.GetJointPosition(JointID.L5S1));
             input.percentCapable = 75;
 
-            input.left.knuckle = Ips2Aff(manikinTimeline.jointLeft_MiddleProximal.pos());
-            input.left.wrist = Ips2Aff(manikinTimeline.jointLeftWrist.pos());
-            input.left.elbow = Ips2Aff(manikinTimeline.jointLeftElbow.pos());
-            input.left.shoulder = Ips2Aff(manikinTimeline.jointLeftGH.pos());
-            Vector3 force = manikinTimeline.GetLeftHandForce();
+            input.left.knuckle = Ips2Aff(manikin.GetJointPosition(JointID.LeftMiddleProximal));
+            input.left.wrist = Ips2Aff(manikin.GetJointPosition(JointID.LeftWrist)); 
+            input.left.elbow = Ips2Aff(manikin.GetJointPosition(JointID.LeftElbow)); 
+            input.left.shoulder = Ips2Aff(manikin.GetJointPosition(JointID.LeftGH)); 
+            Vector3 force = manikin.GetLeftHandForce();
             if (force.Length() == 0)
             {
                 force.Z = 0.00001f;
@@ -48,11 +48,12 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             input.left.actualLoad = force.Length();
             input.left.forceDirection = Ips2Aff(force.Normalized());
 
-            input.right.knuckle = Ips2Aff(manikinTimeline.jointRight_MiddleProximal.pos());
-            input.right.wrist = Ips2Aff(manikinTimeline.jointRightWrist.pos());
-            input.right.elbow = Ips2Aff(manikinTimeline.jointRightElbow.pos());
-            input.right.shoulder = Ips2Aff(manikinTimeline.jointRightGH.pos());
-            force = manikinTimeline.GetRightHandForce();
+            input.right.knuckle = Ips2Aff(manikin.GetJointPosition(JointID.RightMiddleProximal));
+            input.right.wrist = Ips2Aff(manikin.GetJointPosition(JointID.RightWrist));
+            input.right.elbow = Ips2Aff(manikin.GetJointPosition(JointID.RightElbow));
+            input.right.shoulder = Ips2Aff(manikin.GetJointPosition(JointID.RightGH));
+
+            force = manikin.GetRightHandForce();
             if (force.Length() == 0)
             {
                 force.Z = 0.00001f;
@@ -65,12 +66,17 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         
 
         [HttpGet]
-        public IActionResult GetGraphValArrs(float percentCapable = 71, float demoLoadPercent = 100)
+        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100)
         {
-            string dir = "C:/Users/lebm/AppData/Local/PEM/IpsErgoExportTest/";
-            string msg = _messageStorageService.GetLatestMessage();
-            Debug.WriteLine(msg);
-            ManikinTimeline manikinTimeline = new ManikinTimeline(dir + "Male_w=78_s=1756.bin", dir + "Family 1.ctrlpts");
+            //string dir = "C:/Users/lebm/AppData/Local/PEM/IpsErgoExportTest/";
+            //string msg = _messageStorageService.GetLatestMessage();
+            //Debug.WriteLine(msg);
+            //ManikinBase manikin = new IMMA.IMMAManikin(dir + "Male_w=78_s=1756.bin", dir + "Family 1.ctrlpts");
+            ManikinBase? manikin = ManikinManager.loadedManikin;
+            if(manikin == null)
+            {
+                return BadRequest();
+            }
             List<float> timestamps = new List<float>();
             float t = 0;
             int frame = 0;
@@ -80,12 +86,12 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             {
                 vals[i] = new List<float>();
             }
-            while (t < manikinTimeline.duration)
+            while (t < manikin.timelineDuration)
             {
                 timestamps.Add(t);
-                manikinTimeline.SetTime(t);
+                manikin.SetTime(t);
                 Aff aff = new Aff();
-                aff.input = GetAffInput(manikinTimeline);
+                aff.input = GetAffInput(manikin);
                 aff.input.percentCapable = percentCapable;
                 aff.input.left.actualLoad *= demoLoadPercent/100;
                 aff.input.right.actualLoad *= demoLoadPercent/100;

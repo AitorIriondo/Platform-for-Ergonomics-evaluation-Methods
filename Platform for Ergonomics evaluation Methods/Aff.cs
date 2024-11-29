@@ -189,9 +189,9 @@ public class Aff {
     static readonly Vector3 gravityDirection = new Vector3(0, 0, -1);// % gravity in Global Axis System
     public Antropometrics antropometrics = new Antropometrics();
     public Input input = new Input();
-    public Vector3[] SAS;
-    public Arm leftArm;
-    public Arm rightArm;
+    public Vector3[]? SAS;
+    public Arm? leftArm;
+    public Arm? rightArm;
 
     public static Vector3[] GetSAS(Input input) {
         /* establish Shoulder Axis System(SAS) */

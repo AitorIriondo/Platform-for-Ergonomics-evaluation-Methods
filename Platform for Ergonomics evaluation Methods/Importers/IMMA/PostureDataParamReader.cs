@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 
+namespace IMMA;
 public class PostureDataParamReader {
 	public string name;
 	public long size;
