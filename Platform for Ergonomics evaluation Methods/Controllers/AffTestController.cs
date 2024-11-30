@@ -22,6 +22,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             return View();
         }
 
+        
         static Vector3 Ips2Aff(Vector3 v)
         {
             return new Vector3(v.Y * -1, v.X, v.Z);
@@ -63,7 +64,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             return input;
 
         }
-        
+
 
         [HttpGet]
         public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100)
@@ -73,7 +74,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             //Debug.WriteLine(msg);
             //ManikinBase manikin = new IMMA.IMMAManikin(dir + "Male_w=78_s=1756.bin", dir + "Family 1.ctrlpts");
             ManikinBase? manikin = ManikinManager.loadedManikin;
-            if(manikin == null)
+            if (manikin == null)
             {
                 return BadRequest();
             }
@@ -82,7 +83,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             int frame = 0;
             bool includeProbability = true;
             List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
-            for(int i=0; i < vals.Length; i++)
+            for (int i = 0; i < vals.Length; i++)
             {
                 vals[i] = new List<float>();
             }
@@ -93,15 +94,15 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 Aff aff = new Aff();
                 aff.input = GetAffInput(manikin);
                 aff.input.percentCapable = percentCapable;
-                aff.input.left.actualLoad *= demoLoadPercent/100;
-                aff.input.right.actualLoad *= demoLoadPercent/100;
+                aff.input.left.actualLoad *= demoLoadPercent / 100;
+                aff.input.right.actualLoad *= demoLoadPercent / 100;
                 aff.Calculate();
                 int arrIdx = 0;
                 for (int i = 0; i < 2; i++)
                 {
                     vals[arrIdx++].Add((i == 0 ? aff.input.left : aff.input.right).actualLoad);
                     vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masWithGravity);
-                    if(includeProbability)
+                    if (includeProbability)
                     {
                         vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
                     }
@@ -120,6 +121,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             }
             return Json(new { timestamps, vals, labels });
         }
+                
     }
 
 }

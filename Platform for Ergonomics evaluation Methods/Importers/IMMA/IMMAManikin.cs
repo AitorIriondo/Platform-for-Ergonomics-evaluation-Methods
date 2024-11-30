@@ -231,9 +231,12 @@ public class IMMAManikin : ManikinBase{
         }
         return null;
 	}
-	public override void OnTimeChanged() {
-		frameInterPolationInfo = getFrameInterpolationInfo(time);
+    public override void SetTime(float newTime)
+    {
+        base.SetTime(newTime);
+        frameInterPolationInfo = getFrameInterpolationInfo(time);
     }
+
 	protected MJoint GetJoint(JointID jointID)
 	{
 		if (jointDict.ContainsKey(jointID))

@@ -40,5 +40,14 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        [HttpGet]
+        public IActionResult GetLoadedManikinInfo()
+        {
+            string type = ManikinManager.loadedManikin != null ? ManikinManager.loadedManikin.GetType().ToString() : "None, Run exportTest.lua [TODO: Change this text]";
+            return Json(new { type });
+        }
+
+
     }
 }

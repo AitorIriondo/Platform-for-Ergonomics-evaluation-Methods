@@ -29,6 +29,7 @@
                 </div>
             </div>
         </nav>
+        <div>Loaded Manikin:<div id="loaded_manikin_info" style="display: inline-block"></div></div>
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -44,6 +45,23 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        function checkLoadedManikin() {
+            $.ajax({
+                url: '@Url.Action("GetLoadedManikinInfo", "Home")',
+                method: 'GET',
+                success: function (response) {
+                    document.getElementById('loaded_manikin_info').innerHTML = JSON.stringify(response);
+                },
+                error: function () {
+                    console.log("Failed to fetch message.");
+                }
+            });
+        }
+        checkLoadedManikin();
+        setInterval(checkLoadedManikin, 1000);
+
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -2,21 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 
-
-[System.Serializable]
 public abstract class ManikinBase{
     public float time;
     public float timelineDuration;
     public virtual void SetTime(float newTime) {
-        newTime = MathF.Min(timelineDuration, MathF.Max(0, newTime));
-        bool changed = newTime != time;
-        time = newTime;
-        if (changed) {
-            OnTimeChanged();
-        }
-    }
-    public virtual void OnTimeChanged() {
-
+        time = MathF.Min(timelineDuration, MathF.Max(0, newTime));
     }
     public abstract Vector3 GetJointPosition(JointID jointID);
 
@@ -29,6 +19,7 @@ public abstract class ManikinBase{
         return Vector3.Zero;
     }
 }
+
 public enum JointID
 {
     L5S1,

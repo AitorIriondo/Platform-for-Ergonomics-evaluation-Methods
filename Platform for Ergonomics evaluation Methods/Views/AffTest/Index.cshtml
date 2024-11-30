@@ -51,7 +51,7 @@
     }
 
 </style>
-<div id="graphMain">No manikin loaded. Run exportTest.lua [TODO: Change this text]</div>
+<div id="graphMain">No manikin loaded</div>
 <div class="slider-container">
     <label class="slider-label">
         MAS percentile: <span id="percentSliderValue" class="slider-value">75</span>
@@ -159,7 +159,6 @@
     });
 
     function refresh() {
-        console.log("hej");
         $.ajax({
             url: '@Url.Action("GetGraphValArrs", "AffTest")',
             method: 'GET',
@@ -172,7 +171,7 @@
                 populateGraphs(response);
             },
             error: function () {
-                console.log("Failed to fetch message.");
+                //console.log("Failed to fetch message.");
                 setTimeout(refresh, 1000);
             }
         });
