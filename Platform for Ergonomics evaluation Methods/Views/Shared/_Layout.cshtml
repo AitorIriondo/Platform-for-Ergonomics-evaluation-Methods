@@ -30,6 +30,7 @@
             </div>
         </nav>
         <div>Loaded Manikin:<div id="loaded_manikin_info" style="display: inline-block"></div></div>
+        <button onclick="fetch('/Home/LoadLastManikin', {method: 'POST'});">Load Last</button>
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -60,7 +61,6 @@
         }
         checkLoadedManikin();
         setInterval(checkLoadedManikin, 1000);
-
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

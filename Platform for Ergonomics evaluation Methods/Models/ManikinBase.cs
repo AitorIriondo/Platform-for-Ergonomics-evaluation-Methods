@@ -5,6 +5,10 @@ using System.Numerics;
 public abstract class ManikinBase{
     public float time;
     public float timelineDuration;
+    public float weight;
+    public float height;
+    public Gender gender = Gender.Unspecified;
+
     public virtual void SetTime(float newTime) {
         time = MathF.Min(timelineDuration, MathF.Max(0, newTime));
     }
@@ -20,6 +24,12 @@ public abstract class ManikinBase{
     }
 }
 
+public enum Gender
+{
+    Unspecified,
+    Female,
+    Male
+}
 public enum JointID
 {
     L5S1,

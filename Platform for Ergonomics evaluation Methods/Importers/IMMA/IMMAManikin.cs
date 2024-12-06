@@ -197,7 +197,6 @@ public class IMMAManikin : ManikinBase{
 	}
 	public static IMMAManikin TryParse(string json)
 	{
-
 		try
 		{
 			Message msg = JsonConvert.DeserializeObject<Message>(json);
