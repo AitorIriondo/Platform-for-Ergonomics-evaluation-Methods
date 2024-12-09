@@ -55,7 +55,6 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         public IActionResult LoadLastManikin()
         {
             string res = ManikinManager.LoadLast() ? "OK" : "FAIL";
-            ManikinBase manikin = ManikinManager.loadedManikin;
             return Json(new { res });
         }
 
@@ -65,6 +64,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             public class Frame
             {
                 public float time;
+                public List<float> headTransform = new List<float>();
                 public List<List<Vector3>> limbJointPositions = new List<List<Vector3>>();
             }
             public List<string> limbNames = new List<string>();
@@ -76,6 +76,12 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 foreach (Limb limb in limbs)
                 {
                     limbNames.Add(limb.name);
+                    List<string> jointNames = new List<string>();
+                    foreach(JointID jointID in limb.joints)
+                    {
+                        jointNames.Add(jointID.ToString());
+                    }
+                    limbJoints.Add(jointNames);
                 }
                 float t = 0;
                 while (t <= manikin.timelineDuration)
@@ -93,6 +99,9 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                         }
                         frame.limbJointPositions.Add(positions);
                     }
+                    Vector3 headPos;
+                    Quaternion headRot;
+
                     t += .03f;
                 }
             }
@@ -101,6 +110,10 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetStickieData()
         {
+            if (ManikinManager.loadedManikin == null)
+            {
+                return BadRequest();
+            }
             StickieData stickieData = new StickieData(ManikinManager.loadedManikin);
 
             return Json(JsonConvert.SerializeObject(stickieData, Formatting.Indented));

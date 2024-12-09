@@ -23,30 +23,31 @@ function StickieBone(thickness, material, j1, j2) {
 function parseVec3(obj) {
     return new THREE.Vector3(obj.X, obj.Y, obj.Z);
 }
-function StickieLimb(manikin, material) {
+function StickieLimb(name, jointNames, manikin, material) {
     var thickness = .02; // StickManikin.isFinger(joint.name) ? .01 : .02;
     var self = new THREE.Object3D();
+    self.name = name;
     manikin.add(self);
     self.bones = [];
     self.joints = [];
-    var firstUpdate = true;
+    console.log(jointNames);
+    var prevJoint = null;
+    jointNames.forEach(jointName => {
+        var joint = new THREE.Mesh(new THREE.SphereGeometry(thickness, 16, 16), material);
+        joint.name = jointName;
+        self.add(joint);
+        self.joints.push(joint);
+        if (prevJoint) {
+            var bone = new StickieBone(thickness, material, prevJoint, joint);
+            self.bones.push(bone);
+            self.add(bone);
+        }
+        prevJoint = joint;
+    });
+    
+
     self.update = function () {
         positions = manikin.getLimbJointPositions(self);
-        if (firstUpdate) {
-            var prevJoint = null;
-            positions.forEach(p => {
-                var joint = new THREE.Mesh(new THREE.SphereGeometry(thickness, 16, 16), material);
-                self.add(joint);
-                self.joints.push(joint);
-                if (prevJoint) {
-                    var bone = new StickieBone(thickness, material, prevJoint, joint);
-                    self.bones.push(bone);
-                    self.add(bone);
-                }
-                prevJoint = joint;
-            });
-            firstUpdate = false;
-        }
         for (var i = 0; i < positions.length; i++) {
             self.joints[i].position.copy(positions[i]);
         }
@@ -57,7 +58,7 @@ function StickieLimb(manikin, material) {
     return self;
 
 }
-function StickieHead(manikin, material){
+function StickieHead(material){
     var self=new THREE.Object3D();
     const skull=new THREE.Mesh( new THREE.SphereGeometry( .1,16,16), material);
     skull.name="skull";
@@ -75,13 +76,6 @@ function StickieHead(manikin, material){
     const rightEye=leftEye.clone();
     rightEye.translateY(-eyeDist);
     skull.add(rightEye);
-    const aa=manikin.jointSet.AtlantoAxial;
-    self.update=function(){
-        self.visible=isFinite(aa.rotValOffset);
-    };
-    aa.add(self);
-    manikin.add(aa);
-    
     return self;
 }
 
@@ -171,6 +165,7 @@ class StickManikin extends THREE.Object3D{
         });
         return ret;
     }
+
     constructor(data, flags) {
         super();
         if (!data) {
@@ -181,39 +176,14 @@ class StickManikin extends THREE.Object3D{
         this.boneMaterial = StickManikin.getLimbMaterial(this.color);
         this.limbs = [];
         this.data = JSON.parse(data);
+        var limbIdx = 0;
         this.data.limbNames.forEach(name => {
-            this.limbs.push(new StickieLimb(this, this.boneMaterial));
+            this.limbs.push(new StickieLimb(name, this.data.limbJoints[limbIdx++], this, this.boneMaterial));
         });
-        this.setFrameIdx(0);
-        return;
 
-        this.jointSet = new JointSet(data, JointSet.HIPS_TO_L5S1);
-        var joints = this.jointSet.activeJoints;
-        this.transReader = new TransformReader(data);
-        joints.forEach(joint => {
-            if (joint.parentJoint) {
-                var bone = new StickieBone(this, joint, this.boneMaterial);
-                joint.bone = bone;
-                bone.name = joint.name + "Bone";
-                this.bones.push(bone);
-            }
-            this.add(joint);
-            joint.xyzMarker = new XYZMarker();
-            joint.xyzMarker.name = "xyzMarker";
-            joint.add(joint.xyzMarker);
-            var jointSize = StickManikin.getJointSize(joint.name);
-            joint.ball = new THREE.Mesh(new THREE.SphereGeometry(jointSize, 16, 16), StickManikin.getLimbMaterial(this.color));
-            joint.ball.name = "ball";
-            joint.add(joint.ball);
-        });
-        this.head = new StickieHead(this, this.boneMaterial);
-        this.head.name = "head";
-        this.joints = joints;
-        this.showXYZMarkers(false);
+        //this.head = new StickieHead(this, this.boneMaterial);
+        //this.head.name = "head";
         this.setFrameIdx(0);
-        //        this.shoulderBar=new TestBar();
-        //        this.add(this.shoulderBar);
-        //this.setOpacity(.2);
     }
     createClone(){
         var ret=this.clone();
@@ -239,37 +209,6 @@ class StickManikin extends THREE.Object3D{
         return ret;
     }
 
-    getJointsByGroup(jointGroup){
-        var ret=[];
-        this.joints.forEach(j=>{
-            //console.log(j.jointIdx);
-            if(jointGroup.jointIndices.indexOf(j.jointIdx)>=0){
-                ret.push(j);
-            }
-        });
-        return ret;
-    }
-    getJointByBaseJoint(baseJoint){
-        return this.joints[baseJoint.idx-2];
-    }
-    showJointGroup(jointGroup, show){
-        var joints=this.getJointsByGroup(jointGroup);
-        joints.forEach(j=>{
-            j.visible=show?true:false;
-            if(j.bone){
-                j.bone.visible=j.visible;
-            }
-        });
-        return joints;
-    }
-    showXYZMarkers(show){
-        this.joints.forEach(j=>{
-            if(j.xyzMarker){
-                j.xyzMarker.visible=show?true:false;
-            }
-        });
-        
-    }
     update(){
         this.setFrameIdx(this.frameIdx);
     }
@@ -280,6 +219,7 @@ class StickManikin extends THREE.Object3D{
         this.updateWorldMatrix(false, true);
         this.limbs.forEach(limb => { limb.update(); })
         this.updateWorldMatrix(true, true);
+
         this.lastUpdateTime = Date.now();
         return this.curFrame;
 
@@ -288,29 +228,8 @@ class StickManikin extends THREE.Object3D{
     setColor=function(color){
         this.color=new THREE.Color(color);
         this.boneMaterial.color=this.color;
-        //this.joints.forEach(j=>{
-        //    if(j.ball){
-        //        j.ball.material.color=this.color;
-        //    }
-        //});
     }
-    highlight=function(h){
-        if(!this.orgColor){
-            this.orgColor=this.color;
-        }
-        this.setColor(h?new THREE.Color("dodgerblue"):this.orgColor);
-    }
-    setOpacity(opacity){
-        //console.log(this.boneMaterial);
-        this.boneMaterial.transparent=true;
-        this.boneMaterial.opacity=opacity;
-        //Det funkar inte snyggt med opacity eftersom bones och balls överlappar varandra
-    }
-    getJoint(name){
-        for(var i=0;i<this.joints.length;i++){
-            if(this.joints[i].name==name){
-                return this.joints[i];
-            }
-        }
+    getJoint(name) {
+        return this.getObjectByName(name);
     }
 }

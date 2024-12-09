@@ -25,7 +25,7 @@ public class ModelInfo {
 	public bool hasZeroPose() {
 		return zeroPosture.mJointVec.Count != 0;
 	}
-	bool useCache = true;
+	static bool useCache = true;
 	public PostureData GetPostureData(int frameIdx) {
         if (useCache && postureDataCache.ContainsKey(frameIdx)) {
             return postureDataCache.GetValueOrDefault(frameIdx, null);
@@ -54,6 +54,13 @@ public class ModelInfo {
 	public static ModelInfo FromFile(string filename) {
 		ModelInfo modelInfo = new ModelInfo();
 		modelInfo.ParseFile(filename);
+		if (useCache)
+		{
+			for (int i = 0; i < modelInfo.timeSteps.Count; i++)
+			{
+				modelInfo.GetPostureData(i);
+			}
+		}
 		return modelInfo;
 	}
 	BinFileReader fileReader;

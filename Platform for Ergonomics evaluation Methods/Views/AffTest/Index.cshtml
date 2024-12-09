@@ -49,11 +49,6 @@
     .slider{
         width: 500px;
     }
-    #stickieViewContainer{
-        width: 300px;
-        height: 300px;
-        border: 1px solid green;
-    }
 </style>
 <div id="graphMain">No manikin loaded</div>
 <div class="slider-container">
@@ -189,19 +184,20 @@
 
 </script>
 
-@if (false)
-{
-    <div class="slider-container">
-        <label class="slider-label">
-            Time: <span id="frameSliderValue" class="slider-value">0 s</span>
-        </label>
-        <input class="slider" type="range" id="frameSlider" min="0" max="0" value="0">
-    </div>
-    <div id="stickieViewContainer"></div>
-    <script src="~/js/three/build/three.js"></script>
-    <script src="~/js/StickieView.js"></script>
-    <script src="~/js/StickManikin.js"></script>
-    <script>
+
+
+<div class="slider-container">
+    <label class="slider-label">
+        Time: <span id="frameSliderValue" class="slider-value">0 s</span>
+    </label>
+    <input class="slider" type="range" id="frameSlider" min="0" max="0" value="0">
+</div>
+<div id="stickieViewContainer"></div>
+<script src="~/js/three/build/three.js"></script>
+<script src="~/js/StickieView.js"></script>
+<script src="~/js/StickManikin.js"></script>
+<script>
+    function stickieStart(){
         var stickieView;
         const frameSlider = document.getElementById('frameSlider');
         frameSlider.valLabel = document.getElementById('frameSliderValue');
@@ -209,28 +205,29 @@
             var frame = stickieView.stickie.setFrameIdx(this.value);
             this.valLabel.textContent = ~~(frame.time * 100) / 100 + " s";
         });
-        document.addEventListener('DOMContentLoaded', function () {
-            stickieView = new StickieView(document.getElementById("stickieViewContainer"));
-            //var stickie = new StickManikin()
+        var stickieViewContainer = document.getElementById("stickieViewContainer");
+        stickieViewContainer.style.width = "300px";
+        stickieViewContainer.style.height = stickieViewContainer.style.width;
+        stickieView = new StickieView(stickieViewContainer);
 
-            $.ajax({
-                url: '@Url.Action("GetStickieData", "Home")',
-                method: 'GET',
-                data: {},
-                success: function (response) {
-                    console.log(response);
-                    var stickie = new StickManikin(response);
-                    console.log(stickie);
-                    stickieView.setStickie(stickie);
-                    console.log(stickieView);
-                    frameSlider.max = stickie.data.frames.length;
-                },
-                error: function () {
-                    console.log("Error");
-                }
-            });
-
+        $.ajax({
+            url: '@Url.Action("GetStickieData", "Home")',
+            method: 'GET',
+            data: {},
+            success: function (response) {
+                console.log(response);
+                var stickie = new StickManikin(response);
+                console.log(stickie);
+                stickieView.setStickie(stickie);
+                console.log(stickieView);
+                frameSlider.max = stickie.data.frames.length;
+            },
+            error: function () {
+                console.log("Error");
+            }
         });
 
-    </script>
-}
+    }
+    setTimeout(stickieStart, 500);
+
+</script>

@@ -142,7 +142,7 @@ public class IMMAManikin : ManikinBase{
 			JointID.AtlantoAxial,
 		};
 		foreach (string side in new string[] { "Right", "Left" }) {
-			Limb arm = new Limb(side + " Arm");
+			Limb arm = new Limb(side + "Arm");
             arm.AddJoint(JointID.T1T2);
             foreach (string suffix in new string[] { "SC", "AC", "GH", "Elbow", "Wrist" })
 			{
@@ -159,6 +159,7 @@ public class IMMAManikin : ManikinBase{
         }
         return limbList;
     }
+
     MJoint initJoint(string name, ModelInfo modelInfo)
     {
         MJoint joint = new MJoint();
