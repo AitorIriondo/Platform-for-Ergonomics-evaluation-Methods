@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Platform_for_Ergonomics_evaluation_Methods.Models;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using System.Diagnostics;
+using System.Numerics;
+using System.Text.Json.Nodes;
 
 namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
 {
@@ -48,11 +51,59 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             return Json(new { type });
         }
 
-        [HttpPost]
+        [HttpGet]
         public IActionResult LoadLastManikin()
         {
             string res = ManikinManager.LoadLast() ? "OK" : "FAIL";
+            ManikinBase manikin = ManikinManager.loadedManikin;
             return Json(new { res });
+        }
+
+
+        class StickieData
+        {
+            public class Frame
+            {
+                public float time;
+                public List<List<Vector3>> limbJointPositions = new List<List<Vector3>>();
+            }
+            public List<string> limbNames = new List<string>();
+            public List<List<string>> limbJoints = new List<List<string>>();
+            public List<Frame> frames = new List<Frame>();
+            public StickieData(ManikinBase manikin)
+            {
+                List<Limb> limbs = manikin.GetLimbs();
+                foreach (Limb limb in limbs)
+                {
+                    limbNames.Add(limb.name);
+                }
+                float t = 0;
+                while (t <= manikin.timelineDuration)
+                {
+                    Frame frame = new Frame();
+                    frames.Add(frame);
+                    frame.time = t;
+                    manikin.SetTime(t);
+                    foreach (Limb limb in limbs)
+                    {
+                        List<Vector3> positions = new List<Vector3>();
+                        foreach (JointID j in limb.joints)
+                        {
+                            positions.Add(manikin.GetJointPosition(j));
+                        }
+                        frame.limbJointPositions.Add(positions);
+                    }
+                    t += .03f;
+                }
+            }
+
+        }
+        [HttpGet]
+        public IActionResult GetStickieData()
+        {
+            StickieData stickieData = new StickieData(ManikinManager.loadedManikin);
+
+            return Json(JsonConvert.SerializeObject(stickieData, Formatting.Indented));
         }
 
 

@@ -25,13 +25,17 @@ public class ModelInfo {
 	public bool hasZeroPose() {
 		return zeroPosture.mJointVec.Count != 0;
 	}
-	bool useCache = false;
+	bool useCache = true;
 	public PostureData GetPostureData(int frameIdx) {
         if (useCache && postureDataCache.ContainsKey(frameIdx)) {
             return postureDataCache.GetValueOrDefault(frameIdx, null);
         }
         List<int> rawIndices=timeMappedRawFrameIndices.GetValueOrDefault(timeSteps[frameIdx]);
 		PostureData pd = ReadRawPostureDataFrame(rawIndices[0]);
+		if (useCache)
+		{
+            postureDataCache.Add(frameIdx, pd);
+        }
 		return pd;
         if (rawIndices.Count > 1) {
 			PostureData pd2 = ReadRawPostureDataFrame(rawIndices[1]);

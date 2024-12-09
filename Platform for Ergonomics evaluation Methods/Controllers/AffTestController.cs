@@ -69,59 +69,63 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100)
         {
-            //string dir = "C:/Users/lebm/AppData/Local/PEM/IpsErgoExportTest/";
-            //string msg = _messageStorageService.GetLatestMessage();
-            //Debug.WriteLine(msg);
-            //ManikinBase manikin = new IMMA.IMMAManikin(dir + "Male_w=78_s=1756.bin", dir + "Family 1.ctrlpts");
-            ManikinBase? manikin = ManikinManager.loadedManikin;
-            if (manikin == null)
+            try
             {
-                return BadRequest();
-            }
-            List<float> timestamps = new List<float>();
-            float t = 0;
-            int frame = 0;
-            bool includeProbability = true;
-            List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
-            for (int i = 0; i < vals.Length; i++)
-            {
-                vals[i] = new List<float>();
-            }
-            while (t < manikin.timelineDuration)
-            {
-                timestamps.Add(t);
-                manikin.SetTime(t);
-                Aff aff = new Aff();
-                aff.input = GetAffInput(manikin);
-                aff.input.percentCapable = percentCapable;
-                aff.input.left.actualLoad *= demoLoadPercent / 100;
-                aff.input.right.actualLoad *= demoLoadPercent / 100;
-                aff.Calculate();
-                int arrIdx = 0;
-                for (int i = 0; i < 2; i++)
+                ManikinBase? manikin = ManikinManager.loadedManikin;
+                if (manikin == null)
                 {
-                    vals[arrIdx++].Add((i == 0 ? aff.input.left : aff.input.right).actualLoad);
-                    vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masWithGravity);
-                    if (includeProbability)
-                    {
-                        vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
-                    }
+                    return BadRequest();
                 }
-                t = ++frame * .1f;
+                List<float> timestamps = new List<float>();
+                float t = 0;
+                int frame = 0;
+                bool includeProbability = true;
+                List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
+                for (int i = 0; i < vals.Length; i++)
+                {
+                    vals[i] = new List<float>();
+                }
+                while (t < manikin.timelineDuration)
+                {
+                    timestamps.Add(t);
+                    manikin.SetTime(t);
+                    Aff aff = new Aff();
+                    aff.input = GetAffInput(manikin);
+                    aff.input.percentCapable = percentCapable;
+                    aff.input.left.actualLoad *= demoLoadPercent / 100;
+                    aff.input.right.actualLoad *= demoLoadPercent / 100;
+                    aff.Calculate();
+                    int arrIdx = 0;
+                    for (int i = 0; i < 2; i++)
+                    {
+                        vals[arrIdx++].Add((i == 0 ? aff.input.left : aff.input.right).actualLoad);
+                        vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masWithGravity);
+                        if (includeProbability)
+                        {
+                            vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
+                        }
+                    }
+                    t = ++frame * .1f;
+                }
+                //Debug.WriteLine(vals[1].Count);
+                List<string> labels = new List<string>(){
+                    "Load (N)",
+                    $"MAS for {percentCapable}% cap (N)",
+                };
+                if (includeProbability)
+                {
+                    labels.Add("%Cap for load");
+                }
+                return Json(new { timestamps, vals, labels });
+
             }
-            Debug.WriteLine(vals[1].Count);
-            List<string> labels = new List<string>()
+            catch (Exception ex)
             {
-                "Load (N)",
-                $"MAS for {percentCapable}% cap (N)",
-            };
-            if (includeProbability)
-            {
-                labels.Add("%Cap for load");
+                Debug.WriteLine(ex.Message);  
             }
-            return Json(new { timestamps, vals, labels });
+            return BadRequest();
         }
-                
+
     }
 
 }

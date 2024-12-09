@@ -122,7 +122,43 @@ public class IMMAManikin : ManikinBase{
 	public int getFrameIdxAtOrBeforeTime(float time) {
 		return getFrameInterpolationInfo(time, true).lowIdx;
 	}
+  //  jointRightSC.SetParent(jointT1T2);
+		//jointRightAC.SetParent(jointRightSC);
+		//jointRightGH.SetParent(jointRightAC);
 
+	public override List<Limb> GetLimbs()
+    {
+		List<Limb> limbList = new List<Limb>();
+		Limb spine = new Limb("Spine");
+		limbList.Add(spine);
+        spine.joints = new List<JointID>() { 
+			JointID.L5S1,
+			JointID.L3L4,
+			JointID.T12L1,
+			JointID.T6T7,
+			JointID.T1T2,
+			JointID.C6C7,
+			JointID.C4C5,
+			JointID.AtlantoAxial,
+		};
+		foreach (string side in new string[] { "Right", "Left" }) {
+			Limb arm = new Limb(side + " Arm");
+            arm.AddJoint(JointID.T1T2);
+            foreach (string suffix in new string[] { "SC", "AC", "GH", "Elbow", "Wrist" })
+			{
+				arm.AddJoint(side + suffix);
+			}
+			limbList.Add(arm);
+			Limb leg = new Limb(side + "Leg");
+			leg.AddJoint(JointID.L5S1);
+            foreach (string suffix in new string[] { "Hip", "Knee", "Ankle"})
+            {
+                leg.AddJoint(side + suffix);
+            }
+			limbList.Add(leg);	
+        }
+        return limbList;
+    }
     MJoint initJoint(string name, ModelInfo modelInfo)
     {
         MJoint joint = new MJoint();
@@ -261,7 +297,7 @@ public class IMMAManikin : ManikinBase{
 	public MJoint? jointT12L1;
 	public MJoint? jointT6T7;
 	public MJoint? jointT1T2;
-	public MJoint jointC6C7;
+	public MJoint? jointC6C7;
 	public MJoint? jointC4C5;
 	public MJoint? jointAtlantoAxial;
 	public MJoint? jointEyeside;

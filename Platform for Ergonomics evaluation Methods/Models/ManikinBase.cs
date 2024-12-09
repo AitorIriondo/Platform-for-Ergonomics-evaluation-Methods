@@ -2,6 +2,35 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 
+public class Limb
+{
+    public string name;
+    public List<JointID> joints = new List<JointID>();
+    public Limb(string name)
+    {
+        this.name = name;
+    }
+    public bool AddJoint(string name)
+    {
+        try
+        {
+            return AddJoint((JointID)Enum.Parse(typeof(JointID), name));
+        }
+        catch (Exception)
+        {
+
+        }
+        return false;
+    }
+    public bool AddJoint(JointID j)
+    {
+        joints.Add(j);
+        return true;
+    }
+
+}
+
+
 public abstract class ManikinBase{
     public float time;
     public float timelineDuration;
@@ -14,6 +43,10 @@ public abstract class ManikinBase{
     }
     public abstract Vector3 GetJointPosition(JointID jointID);
 
+    public virtual List<Limb> GetLimbs()
+    {
+        return new List<Limb>();
+    }
     public virtual Vector3 GetLeftHandForce()
     {
         return Vector3.Zero;
