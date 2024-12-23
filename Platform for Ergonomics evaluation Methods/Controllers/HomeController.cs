@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
 using Platform_for_Ergonomics_evaluation_Methods.Models;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using System.Diagnostics;
@@ -110,6 +111,11 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetStickieData()
         {
+
+            //StickieData test = new StickieData(new XsensManikin());
+
+            //return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
+
             if (ManikinManager.loadedManikin == null)
             {
                 return BadRequest();

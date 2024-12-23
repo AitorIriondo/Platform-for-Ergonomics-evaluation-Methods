@@ -7,7 +7,7 @@ function StickieView(container, settings){
     var camera=new THREE.OrthographicCamera();
     camera.up=new THREE.Vector3(0,0,1);
     var pan={hor:0,ver:0};
-    var testMarker = new THREE.Mesh(new THREE.SphereGeometry(.2, 16, 16), new THREE.MeshBasicMaterial({ color: "red" }));
+    var testMarker = new THREE.Mesh(new THREE.SphereGeometry(.025, 16, 16), new THREE.MeshBasicMaterial({ color: "red" }));
     scene.add(testMarker);
     function setDirty(){
         isDirty=true;
