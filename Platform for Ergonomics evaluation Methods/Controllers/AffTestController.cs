@@ -22,10 +22,18 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             return View();
         }
 
-        
+
+        static Vector3 Ips2Pem(Vector3 v)
+        {
+            return new Vector3(v.X, v.Y * -1, v.Z);
+        }
+        static Vector3 Pem2Aff(Vector3 v)
+        {
+            return new Vector3(v.Y, v.X, v.Z);
+        }
         static Vector3 Ips2Aff(Vector3 v)
         {
-            return new Vector3(v.Y * -1, v.X, v.Z);
+            return Pem2Aff(Ips2Pem(v));
         }
         Aff.Input GetAffInput(ManikinBase manikin)
         {
@@ -85,7 +93,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 {
                     vals[i] = new List<float>();
                 }
-                while (t < manikin.timelineDuration)
+                while (t < manikin.GetTimelineDuration())
                 {
                     timestamps.Add(t);
                     manikin.SetTime(t);

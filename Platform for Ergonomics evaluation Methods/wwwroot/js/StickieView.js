@@ -9,6 +9,8 @@ function StickieView(container, settings){
     var pan={hor:0,ver:0};
     var testMarker = new THREE.Mesh(new THREE.SphereGeometry(.025, 16, 16), new THREE.MeshBasicMaterial({ color: "red" }));
     scene.add(testMarker);
+    var axesHelper = new THREE.AxesHelper(1);
+    scene.add(axesHelper);
     function setDirty(){
         isDirty=true;
     }
@@ -129,16 +131,19 @@ function StickieView(container, settings){
                     pelvisTmp.position.copy(stickie.getJoint("RightHip").getWorldPosition(new THREE.Vector3()));
                     pelvisTmp.lookAt(stickie.getJoint("LeftHip").getWorldPosition(new THREE.Vector3()));
                     pelvisTmp.rotation.set(0, 0, pelvisTmp.rotation._y);
+                    console.log("rot", pelvisTmp.rotation);
                     pelvisTmp.rotateZ(Math.PI);
                 }
                 catch {
                     console.log("No hips found for POV");
                 }
+                var v1 = new THREE.Vector3()
                 var pos = stickie.position.clone();
                 var offs = offset.clone().applyQuaternion(pelvisTmp.quaternion);
                 camera.position.copy(offs.add(pos));
                 camera.lookAt(pos);
-                testMarker.position.copy(pos);
+                axesHelper.position.copy(pos);
+                testMarker.position.copy(stickie.getJoint("LeftHip").getWorldPosition(new THREE.Vector3()));
                 camera.translateY(pan.ver/camera.zoom);
                 camera.translateX(-pan.hor/camera.zoom);
                 stickieLastUpdateTime = stickie.lastUpdateTime;

@@ -75,48 +75,11 @@ public class IMMAManikin : ManikinBase{
 	public bool interpolateContactForceData = false;
 	protected Dictionary<JointID, MJoint> jointDict = new Dictionary<JointID, MJoint>();
 	FrameInterpolationInfo frameInterPolationInfo = new FrameInterpolationInfo();
-	public List<float> postureTimeSteps { get { return modelInfo.timeSteps; } }
 	public ModelInfo modelInfo;
 
-	public FrameInterpolationInfo getFrameInterpolationInfo(float time, bool justLowIdx = false) {
-		//if (time == frameInterPolationInfo.time) {
-		//	return frameInterPolationInfo;
-		//}
-		FrameInterpolationInfo ret = new FrameInterpolationInfo();
-		ret.lowIdx = postureTimeSteps.IndexOf(time);
-		if (ret.lowIdx >= 0) {
-			return ret;
-		}
-		ret.lowIdx = 0;
-		if (time <= 0) {
-			return ret;
-		}
-		if (time >= postureTimeSteps[postureTimeSteps.Count - 1]) {
-			ret.lowIdx = postureTimeSteps.Count - 1;
-			return ret;
-		}
-
-		while (postureTimeSteps[ret.lowIdx] < time) {
-			ret.lowIdx++;
-		}
-		ret.lowIdx--;
-		if (justLowIdx) {
-			return ret;
-		}
-		float lowTime = postureTimeSteps[ret.lowIdx];
-		if (lowTime == time || ret.lowIdx >= postureTimeSteps.Count - 1) {
-			return ret;
-		}
-		ret.highIdx = ret.lowIdx + 1;
-		while (ret.highIdx < postureTimeSteps.Count && postureTimeSteps[ret.highIdx] == lowTime) {
-			ret.highIdx++;
-		}
-		float tRange = postureTimeSteps[ret.highIdx] - lowTime;
-		if (tRange == 0) {
-			return ret;
-		}
-		ret.factor = (time - lowTime) / tRange;
-		return ret;
+	public FrameInterpolationInfo getFrameInterpolationInfo(float time, bool justLowIdx = false)
+	{
+		return new FrameInterpolationInfo(time, postureTimeSteps, justLowIdx);
 	}
 
 	public int getFrameIdxAtOrBeforeTime(float time) {
@@ -222,8 +185,8 @@ public class IMMAManikin : ManikinBase{
         ctrlPointsTimeline = ManikinControlPointsTimeline.FromFile(ctrlPointsFilename);	
 		this.modelInfoFilename = modelInfoFilename;
         modelInfo = ModelInfo.FromFile(modelInfoFilename);
+		postureTimeSteps = modelInfo.timeSteps;
 		initJoints(modelInfo);
-		timelineDuration = getFinalTime();
 	}
 	[System.Serializable]
 	class Message

@@ -9,8 +9,8 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
     {
         public class Frame
         {
-            float time = 0;
-            int index = -1;
+            public float timeSec = 0;
+            public string type = "";
             public List<Vector3> position = new List<Vector3>();
             public List<Quaternion> orientation = new List<Quaternion>();
             public void Parse(XmlElement element)
@@ -53,6 +53,8 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
                 {
                     orientation.Add(new Quaternion(floats[i], floats[i + 1], floats[i + 2], floats[i + 3]));
                 }
+                timeSec = float.Parse(element.GetAttribute("time"))/1000;
+                type = element.GetAttribute("type");
             }
         }
         XmlDocument doc = new XmlDocument();
@@ -100,7 +102,11 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
             {
                 Frame frame = new Frame();
                 frame.Parse((XmlElement)frameNode);
-                frames.Add(frame);
+                if(frame.type == "normal")
+                {
+                    frames.Add(frame);
+                    postureTimeSteps.Add(frame.timeSec);
+                }
             }
             Debug.WriteLine(frames[0].position.Count / 3);
             Debug.WriteLine(GetJointPosition(JointID.LeftElbow));
@@ -110,14 +116,29 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
         {
             return (XmlElement)doc.GetElementsByTagName("joint")[jointLabels.IndexOf(label)];
         }
-        public override Vector3 GetJointPosition(JointID jointID)
+        Vector3 GetJointPositionAtFrame(JointID jointID, int frameIdx)
         {
             string jointLabel = jointLabelMap[jointID];
-            string segName = GetJointElement(jointLabel).GetElementsByTagName("connector1")[0].InnerText.Split("/")[0];
+            string segName = GetJointElement(jointLabel).GetElementsByTagName("connector2")[0].InnerText.Split("/")[0];
             int segIdx = segmentLabels.IndexOf(segName);
-            Frame frame = frames[3];
+            Frame frame = frames[frameIdx];
             return frame.position[segIdx];
             throw new Exception("Missing joint " + jointID.ToString());
+        }
+        Vector3 interpolate(Vector3 v0, Vector3 v1, float factor)
+        {
+            return v0 + (v1 - v0) * factor;
+        }
+
+        public override Vector3 GetJointPosition(JointID jointID)
+        {
+            FrameInterpolationInfo interpolation = new FrameInterpolationInfo(time, postureTimeSteps);
+            Vector3 v0 = GetJointPositionAtFrame(jointID, interpolation.lowIdx);
+            if (!interpolation.isApplicable())
+            {
+                return v0;
+            }
+            return interpolate(v0, GetJointPositionAtFrame(jointID, interpolation.highIdx), interpolation.factor);
         }
 
         public override List<Limb> GetLimbs()

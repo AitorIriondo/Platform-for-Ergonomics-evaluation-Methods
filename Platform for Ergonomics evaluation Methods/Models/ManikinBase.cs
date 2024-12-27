@@ -33,13 +33,21 @@ public class Limb
 
 public abstract class ManikinBase{
     public float time;
-    public float timelineDuration;
     public float weight;
     public float height;
     public Gender gender = Gender.Unspecified;
+    public List<float> postureTimeSteps = new List<float>();
 
+    public float GetTimelineDuration()
+    {
+        if(postureTimeSteps.Count > 0)
+        {
+            return postureTimeSteps[postureTimeSteps.Count - 1];
+        }
+        return 0;
+    }
     public virtual void SetTime(float newTime) {
-        time = MathF.Min(timelineDuration, MathF.Max(0, newTime));
+        time = MathF.Min(GetTimelineDuration(), MathF.Max(0, newTime));
     }
     public abstract Vector3 GetJointPosition(JointID jointID);
 
@@ -55,6 +63,8 @@ public abstract class ManikinBase{
     {
         return Vector3.Zero;
     }
+    
+
 }
 
 public enum Gender
