@@ -58,6 +58,12 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             string res = ManikinManager.LoadLast() ? "OK" : "FAIL";
             return Json(new { res });
         }
+        [HttpPost]
+        public IActionResult LoadTestData(string msg)
+        {
+            string res = ManikinManager.ParseMessage(msg) ? "OK" : "FAIL";
+            return Json(new { res });
+        }
 
     }
 }

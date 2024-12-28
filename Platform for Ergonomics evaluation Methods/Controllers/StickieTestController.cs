@@ -78,9 +78,9 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             //Z+ = Up
 
 
-            StickieData test = new StickieData(new XsensManikin());
+            //StickieData test = new StickieData(new XsensManikin());
 
-            return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
+            //return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
 
             if (ManikinManager.loadedManikin == null)
             {

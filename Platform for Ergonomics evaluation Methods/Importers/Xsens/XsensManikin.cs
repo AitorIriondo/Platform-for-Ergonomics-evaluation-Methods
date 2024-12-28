@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Xml;
@@ -62,11 +63,10 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
         List<string> segmentLabels = new List<string>();
         List<Frame> frames = new List<Frame>();
         Dictionary<JointID, string> jointLabelMap = new Dictionary<JointID, string>();
-        public XsensManikin()
+        public XsensManikin(string filename)
         {
-            Debug.WriteLine("Hej");
             
-            doc.LoadXml(File.ReadAllText("C:\\Downloads\\Emma-001.mvnx"));
+            doc.LoadXml(File.ReadAllText(filename));
             XmlNodeList joints = doc.GetElementsByTagName("joint");
             foreach (XmlElement joint in joints)
             {
@@ -110,6 +110,33 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
             }
             Debug.WriteLine(frames[0].position.Count / 3);
             Debug.WriteLine(GetJointPosition(JointID.LeftElbow));
+        }
+        [System.Serializable]
+        class Message
+        {
+            public string parser = "";
+            public string file = "";
+        }
+        public static XsensManikin TryParse(string json)
+        {
+            try
+            {
+                Message msg = JsonConvert.DeserializeObject<Message>(json);
+                if (msg.parser == "XsensManikin")
+                {
+                    return new XsensManikin(msg.file);
+                }
+            }
+            catch (JsonReaderException ex)
+            {
+
+
+            }
+            catch (Exception ex)
+            {
+                //Debug.WriteLine(ex.ToString());
+            }
+            return null;
         }
 
         XmlElement GetJointElement(string label)

@@ -1,4 +1,5 @@
-﻿using Platform_for_Ergonomics_evaluation_Methods.Utils;
+﻿using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
+using Platform_for_Ergonomics_evaluation_Methods.Utils;
 using System.Diagnostics;
 
 namespace Platform_for_Ergonomics_evaluation_Methods
@@ -22,7 +23,8 @@ namespace Platform_for_Ergonomics_evaluation_Methods
             {
                 return m;
             }
-            return null;
+            m = XsensManikin.TryParse(json);
+            return m;
         }
         public static bool ParseMessage(string json)
         {
@@ -37,11 +39,12 @@ namespace Platform_for_Ergonomics_evaluation_Methods
                         loadedManikin = m;
                         Debug.WriteLine("Manikin loaded: " + loadedManikin.ToString());
                         File.WriteAllText(lastParsedJsonFilename, json);
+                        return true;
                     }
                 }
             }
 
-            return true;
+            return false;
         }
     }
 }

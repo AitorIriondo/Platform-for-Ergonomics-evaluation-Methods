@@ -62,11 +62,10 @@
             method: 'GET',
             data: {},
             success: function (response) {
-                console.log(response);
+                //console.log(response);
                 var stickie = new StickManikin(response);
-                console.log(stickie);
+                //console.log(stickie);
                 stickieView.setStickie(stickie);
-                console.log(stickieView);
                 frameSlider.max = stickie.data.frames.length;
             },
             error: function () {

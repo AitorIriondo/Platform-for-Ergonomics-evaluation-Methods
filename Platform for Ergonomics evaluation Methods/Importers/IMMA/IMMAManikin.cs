@@ -171,11 +171,11 @@ public class IMMAManikin : ManikinBase{
 
     public override Vector3 GetLeftHandForce()
     {
-        return Ips2Pem(ctrlPointsTimeline.GetForce(1, time));
+        return ctrlPointsTimeline.GetForce(1, time);
     }
     public override Vector3 GetRightHandForce()
     {
-        return Ips2Pem(ctrlPointsTimeline.GetForce(0, time));
+        return ctrlPointsTimeline.GetForce(0, time);
     }
 
     public string modelInfoFilename = "";
@@ -230,6 +230,7 @@ public class IMMAManikin : ManikinBase{
         }
         return null;
 	}
+
     public override void SetTime(float newTime)
     {
         base.SetTime(newTime);
@@ -248,14 +249,10 @@ public class IMMAManikin : ManikinBase{
 		}
 		throw new Exception("Missing joint " + jointID.ToString());
     }
-    static Vector3 Ips2Pem(Vector3 v)
-    {
-        return new Vector3(v.X, v.Y, v.Z);
-    }
 
     public override Vector3 GetJointPosition(JointID jointID)
     {
-		return Ips2Pem(GetJoint(jointID).pos(time));
+		return GetJoint(jointID).pos(time);
     }
     #region A lot of joint lines
 

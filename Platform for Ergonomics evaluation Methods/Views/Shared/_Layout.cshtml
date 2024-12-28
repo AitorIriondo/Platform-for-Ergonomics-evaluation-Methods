@@ -30,6 +30,7 @@
             </div>
         </nav>
         <div>Loaded Manikin:<div id="loaded_manikin_info" style="display: inline-block"></div></div>
+        <div id="loadBtnPanel"></div>
         <button onclick="fetch('/Home/LoadLastManikin', {method: 'GET'});">Load Last</button>
     </header>
     <div class="container">
@@ -61,6 +62,25 @@
         }
         checkLoadedManikin();
         setInterval(checkLoadedManikin, 1000);
+        function addTestMsgBtn(caption, msg) {
+            btn = document.createElement("button");
+            btn.innerHTML = caption;
+            btn.onclick = function () {
+                $.ajax({
+                    url: '@Url.Action("LoadTestData", "Home")',
+                    method: 'POST',
+                    data: {
+                        msg: msg
+                    },
+                    success: function (response) {
+                        location.reload();
+                    }
+                });
+            }
+            document.getElementById("loadBtnPanel").appendChild(btn);
+        }
+        addTestMsgBtn("Immatest", "{\"dir\":\"TestData/IpsErgoExportEwass/\",\"src\":\"IPS\",\"parser\":\"IMMAManikin\"}");
+        addTestMsgBtn("Emmatest", "{\"file\":\"TestData/Emma-001.mvnx\",\"parser\":\"XsensManikin\"}");
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
