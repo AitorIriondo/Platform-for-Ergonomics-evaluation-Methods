@@ -5,7 +5,7 @@ function StickieView(container, settings){
     var doCloneStickie=settings.clone;
     var scene=new THREE.Object3D();
     var camera=new THREE.OrthographicCamera();
-    camera.up=new THREE.Vector3(0,0,1);
+    //camera.up=new THREE.Vector3(0,0,1);
     var pan={hor:0,ver:0};
     var testMarker = new THREE.Mesh(new THREE.SphereGeometry(.025, 16, 16), new THREE.MeshBasicMaterial({ color: "red" }));
     scene.add(testMarker);
@@ -42,7 +42,7 @@ function StickieView(container, settings){
     ctrlPanel.style.textAlign="left";
     var groupChecks=[];
     ctrlPanel.appendChild(document.createElement("hr"));
-    var offset = new THREE.Vector3(100, 100, 100);
+    var offset = new THREE.Vector3(100, 100, -100);
     var povSelector = document.createElement("div");
     povSelector.className="povSelector";
     povSelector.style.textAlign="center";
@@ -62,14 +62,13 @@ function StickieView(container, settings){
         };
         return btn;
     };
-    povSelector.addPov("Iso", 100, 100, 100);
-    povSelector.addPov("F",100,0,0);
-    povSelector.addPov("B",-100,0,0);
-    povSelector.addPov("L",0,100,0);
-    povSelector.addPov("R",0,-100,0);
-    povSelector.addPov("T",.0001,0,100);
-    povSelector.addPov("B",.0001,0,-100);
-    
+    povSelector.addPov("Iso", 100, 100, -100);
+    povSelector.addPov("F",0,0,-100);
+    povSelector.addPov("B",0,0,100);
+    povSelector.addPov("L",-100,0,0);
+    povSelector.addPov("R",100,0,0);
+    povSelector.addPov("T",0,100,0);
+
     var renderer = createRenderer();
     function createRenderer(){
         var containerSize=container.getBoundingClientRect();
@@ -128,20 +127,28 @@ function StickieView(container, settings){
                 }
                 var pelvisTmp = new THREE.Object3D();
                 try {
-                    pelvisTmp.position.copy(stickie.getJoint("RightHip").getWorldPosition(new THREE.Vector3()));
-                    pelvisTmp.lookAt(stickie.getJoint("LeftHip").getWorldPosition(new THREE.Vector3()));
-                    pelvisTmp.rotation.set(0, 0, pelvisTmp.rotation._y);
-                    console.log("rot", pelvisTmp.rotation);
-                    pelvisTmp.rotateZ(Math.PI);
+                    pelvisTmp.position.copy(stickie.getJoint("LeftHip").getWorldPosition(new THREE.Vector3()));
+                    pelvisTmp.lookAt(stickie.getJoint("RightHip").getWorldPosition(new THREE.Vector3()));
+                    pelvisTmp.rotateY(Math.PI/-2);
                 }
                 catch {
                     console.log("No hips found for POV");
                 }
-                var v1 = new THREE.Vector3()
                 var pos = stickie.position.clone();
                 var offs = offset.clone().applyQuaternion(pelvisTmp.quaternion);
                 camera.position.copy(offs.add(pos));
                 camera.lookAt(pos);
+
+                //For top pov align camera left to right
+                if (offset.x == 0 && offset.z == 0) {
+                    camera.rotateZ(Math.PI / 2);
+                    var pelV = new THREE.Vector3(0, 0, -1).applyQuaternion(pelvisTmp.quaternion);
+                    var camV = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.getWorldQuaternion(new THREE.Quaternion()));
+                    if (camV.dot(pelV) < 0) {
+                        camera.rotateZ(Math.PI);
+                    }
+                }
+                axesHelper.visible = false;
                 axesHelper.position.copy(pos);
                 testMarker.position.copy(stickie.getJoint("LeftHip").getWorldPosition(new THREE.Vector3()));
                 camera.translateY(pan.ver/camera.zoom);

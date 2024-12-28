@@ -23,17 +23,9 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         }
 
 
-        static Vector3 Ips2Pem(Vector3 v)
-        {
-            return new Vector3(v.X, v.Y * -1, v.Z);
-        }
         static Vector3 Pem2Aff(Vector3 v)
         {
-            return new Vector3(v.Y, v.X, v.Z);
-        }
-        static Vector3 Ips2Aff(Vector3 v)
-        {
-            return Pem2Aff(Ips2Pem(v));
+            return new Vector3(-v.Y, v.X, v.Z);
         }
         Aff.Input GetAffInput(ManikinBase manikin)
         {
@@ -41,26 +33,26 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
             input.bodyMass = 70;
             input.stature = 1.63f;
             input.female = true;
-            input.C7T1 = Ips2Aff(manikin.GetJointPosition(JointID.C7T1));
-            input.L5S1 = Ips2Aff(manikin.GetJointPosition(JointID.L5S1));
+            input.C7T1 = Pem2Aff(manikin.GetJointPosition(JointID.C7T1));
+            input.L5S1 = Pem2Aff(manikin.GetJointPosition(JointID.L5S1));
             input.percentCapable = 75;
 
-            input.left.knuckle = Ips2Aff(manikin.GetJointPosition(JointID.LeftMiddleProximal));
-            input.left.wrist = Ips2Aff(manikin.GetJointPosition(JointID.LeftWrist)); 
-            input.left.elbow = Ips2Aff(manikin.GetJointPosition(JointID.LeftElbow)); 
-            input.left.shoulder = Ips2Aff(manikin.GetJointPosition(JointID.LeftGH)); 
+            input.left.knuckle = Pem2Aff(manikin.GetJointPosition(JointID.LeftMiddleProximal));
+            input.left.wrist = Pem2Aff(manikin.GetJointPosition(JointID.LeftWrist)); 
+            input.left.elbow = Pem2Aff(manikin.GetJointPosition(JointID.LeftElbow)); 
+            input.left.shoulder = Pem2Aff(manikin.GetJointPosition(JointID.LeftGH)); 
             Vector3 force = manikin.GetLeftHandForce();
             if (force.Length() == 0)
             {
                 force.Z = 0.00001f;
             }
             input.left.actualLoad = force.Length();
-            input.left.forceDirection = Ips2Aff(force.Normalized());
+            input.left.forceDirection = Pem2Aff(force.Normalized());
 
-            input.right.knuckle = Ips2Aff(manikin.GetJointPosition(JointID.RightMiddleProximal));
-            input.right.wrist = Ips2Aff(manikin.GetJointPosition(JointID.RightWrist));
-            input.right.elbow = Ips2Aff(manikin.GetJointPosition(JointID.RightElbow));
-            input.right.shoulder = Ips2Aff(manikin.GetJointPosition(JointID.RightGH));
+            input.right.knuckle = Pem2Aff(manikin.GetJointPosition(JointID.RightMiddleProximal));
+            input.right.wrist = Pem2Aff(manikin.GetJointPosition(JointID.RightWrist));
+            input.right.elbow = Pem2Aff(manikin.GetJointPosition(JointID.RightElbow));
+            input.right.shoulder = Pem2Aff(manikin.GetJointPosition(JointID.RightGH));
 
             force = manikin.GetRightHandForce();
             if (force.Length() == 0)
@@ -68,7 +60,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 force.Z = 0.00001f;
             }
             input.right.actualLoad = force.Length();
-            input.right.forceDirection = Ips2Aff(force.Normalized());
+            input.right.forceDirection = Pem2Aff(force.Normalized());
             return input;
 
         }

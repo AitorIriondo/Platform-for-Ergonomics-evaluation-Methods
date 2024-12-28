@@ -62,39 +62,25 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetStickieData()
         {
-            //IPS (Right handed)
+            //IPS, Xsens, Pem
             //X+ = Forward
             //Y+ = Left
             //Z+ = Up
 
-            //Unity (Left handed)
-            //X+ = Right
-            //Y+ = Up
-            //Z+ = Forward
-
-            //Three (Right handed)
+            //Three
             //X+ = Right
             //Y+ = Up
             //Z+ = Back
-
-            //Xsens (Right handed)
-            //X+ = Forward
-            //Y+ = Right
-            //Z+ = Up
 
             //Aff
             //X+ = Right
             //Y+ = Forward
             //Z+ = Up
 
-            //Pem (Right handed)
-            //X+ = Forward
-            //Y+ = Right
-            //Z+ = Up
 
-            //StickieData test = new StickieData(new XsensManikin());
+            StickieData test = new StickieData(new XsensManikin());
 
-            //return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
+            return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
 
             if (ManikinManager.loadedManikin == null)
             {

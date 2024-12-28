@@ -21,7 +21,7 @@ function StickieBone(thickness, material, j1, j2) {
 
 
 function parseVec3(obj) {
-    return new THREE.Vector3(obj.X, obj.Y, obj.Z);
+    return new THREE.Vector3(-obj.Y, obj.Z, -obj.X);
 }
 function StickieLimb(name, jointNames, manikin, material) {
     var thickness = .02; // StickManikin.isFinger(joint.name) ? .01 : .02;
