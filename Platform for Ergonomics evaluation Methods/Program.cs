@@ -1,10 +1,9 @@
+using IMMA_BY_ERGO_EXPORT;
 using Platform_for_Ergonomics_evaluation_Methods;
-using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;
 using System.Diagnostics;
 
-//new XsensManikin();
 //Environment.Exit(0);
 
 var builder = WebApplication.CreateBuilder(args);

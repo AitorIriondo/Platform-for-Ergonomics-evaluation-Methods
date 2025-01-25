@@ -30,7 +30,9 @@
             </div>
         </nav>
         <div>Loaded Manikin:<div id="loaded_manikin_info" style="display: inline-block"></div></div>
-        <div id="loadBtnPanel"></div>
+        <div id="loadBtnPanel">
+            Load testdata
+        </div>
         <button onclick="fetch('/Home/LoadLastManikin', {method: 'GET'});">Load Last</button>
     </header>
     <div class="container">
@@ -79,7 +81,8 @@
             }
             document.getElementById("loadBtnPanel").appendChild(btn);
         }
-        addTestMsgBtn("Immatest", "{\"dir\":\"TestData/IpsErgoExportEwass/\",\"src\":\"IPS\",\"parser\":\"IMMAManikin\"}");
+        addTestMsgBtn("ImmaErgo", "{\"dir\":\"TestData/IpsErgoExportEwass/\",\"src\":\"IPS\",\"parser\":\"IMMAManikin\"}");
+        addTestMsgBtn("ImmaLua", "{\"manikinFilenames\":[\"TestData/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"src\":\"IPS\",\"parser\":\"IMMAManikinLua\"}");
         addTestMsgBtn("Emmatest", "{\"file\":\"TestData/Emma-001.mvnx\",\"parser\":\"XsensManikin\"}");
     </script>
     @await RenderSectionAsync("Scripts", required: false)

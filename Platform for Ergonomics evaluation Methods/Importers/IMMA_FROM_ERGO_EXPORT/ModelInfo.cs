@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
 
-namespace IMMA;
+namespace IMMA_BY_ERGO_EXPORT;
 
 public class ModelInfo {
 	public string filename;

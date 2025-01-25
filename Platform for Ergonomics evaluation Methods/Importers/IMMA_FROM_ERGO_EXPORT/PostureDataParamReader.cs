@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace IMMA;
+namespace IMMA_BY_ERGO_EXPORT;
 public class PostureDataParamReader {
 	public string name;
 	public long size;

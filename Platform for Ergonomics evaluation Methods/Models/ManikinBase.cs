@@ -37,7 +37,16 @@ public abstract class ManikinBase{
     public float height;
     public Gender gender = Gender.Unspecified;
     public List<float> postureTimeSteps = new List<float>();
-
+    protected FrameInterpolator _frameInterpolator = null;
+    public FrameInterpolator frameInterpolator { get
+        {
+            if(_frameInterpolator == null || _frameInterpolator.time != time)
+            {
+                _frameInterpolator = new FrameInterpolator(time, postureTimeSteps);
+            }
+            return _frameInterpolator;
+        } 
+    }
     public float GetTimelineDuration()
     {
         if(postureTimeSteps.Count > 0)

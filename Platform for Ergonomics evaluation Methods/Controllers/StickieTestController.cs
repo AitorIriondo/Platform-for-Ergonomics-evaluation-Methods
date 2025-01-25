@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
 using System.Numerics;
 
 namespace Platform_for_Ergonomics_evaluation_Methods.Controllers

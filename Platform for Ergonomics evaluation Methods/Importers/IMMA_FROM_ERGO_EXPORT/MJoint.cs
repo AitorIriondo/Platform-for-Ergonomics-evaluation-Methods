@@ -4,7 +4,7 @@ using System.Numerics;
 
 
 
-namespace IMMA;
+namespace IMMA_BY_ERGO_EXPORT;
 
 public class ContactForceData
 {
@@ -16,7 +16,7 @@ public class ContactForceData
 
 [System.Serializable]
 public class MJoint{
-	public IMMAManikin timeline = null;
+	public IMMAManikinFromErgoExport timeline = null;
 	public string name;
 	public MJoint parentJoint;
 	public int idx = -1;
@@ -49,7 +49,7 @@ public class MJoint{
 	}
 
 	public Vector3 pos(float time) {
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		Vector3 v0 = posAtFrame(interpolation.lowIdx);
 		if (!interpolation.isApplicable()) {
 			return v0;
@@ -57,7 +57,7 @@ public class MJoint{
 		return interpolate(v0, posAtFrame(interpolation.highIdx), interpolation.factor);
 	}
 	public Quaternion rot(float time) {
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		Quaternion q0 = rotAtFrame(interpolation.lowIdx);
 		if (!interpolation.isApplicable()) {
 			return q0;
@@ -65,7 +65,7 @@ public class MJoint{
 		return Quaternion.Slerp(q0, rotAtFrame(interpolation.highIdx), interpolation.factor);
 	}
 	public float[] angles(float time) {
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		float[] angs0 = anglesAtFrame(interpolation.lowIdx);
 		if (!interpolation.isApplicable()) {
 			return angs0;
@@ -78,7 +78,7 @@ public class MJoint{
 	}
 
 	public float angle(float time, int angleIdx) {
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		float ang0 = angleAtFrame(interpolation.lowIdx, angleIdx);
 		if (!interpolation.isApplicable()) {
 			return ang0;
@@ -87,7 +87,7 @@ public class MJoint{
 	}
 
 	public Vector3 torque(float time) {
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		Vector3 v0 = GetPostureData(interpolation.lowIdx).mJointTorques[idx];
 		if (!timeline.interpolateTorque || !interpolation.isApplicable()) {
 			return v0;
@@ -139,7 +139,7 @@ public class MJoint{
 			return cfd;
 		}
 		cfd.mJointIndex = idx;
-		FrameInterpolationInfo interpolation = timeline.getFrameInterpolationInfo(time);
+		FrameInterpolator interpolation = timeline.getFrameInterpolationInfo(time);
 		ContactForceData cfd0 = GetPostureData(interpolation.lowIdx).mContactForces[contactForceIdx];
 		if (!timeline.interpolateContactForceData || !interpolation.isApplicable()) {
 			cfd.mForce = cfd0.mForce;

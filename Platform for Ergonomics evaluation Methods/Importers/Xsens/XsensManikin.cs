@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Xml;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
+namespace Xsens
 {
     public class XsensManikin : ManikinBase
     {
@@ -159,7 +159,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens
 
         public override Vector3 GetJointPosition(JointID jointID)
         {
-            FrameInterpolationInfo interpolation = new FrameInterpolationInfo(time, postureTimeSteps);
+            FrameInterpolator interpolation = new FrameInterpolator(time, postureTimeSteps);
             Vector3 v0 = GetJointPositionAtFrame(jointID, interpolation.lowIdx);
             if (!interpolation.isApplicable())
             {

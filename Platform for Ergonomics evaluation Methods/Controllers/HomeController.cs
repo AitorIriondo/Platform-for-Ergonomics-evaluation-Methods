@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
 using Platform_for_Ergonomics_evaluation_Methods.Models;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using System.Diagnostics;

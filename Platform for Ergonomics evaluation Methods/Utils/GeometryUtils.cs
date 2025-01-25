@@ -1,8 +1,49 @@
-﻿using System.Numerics;
+﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System;
+using System.Numerics;
+using MathNet.Numerics.Interpolation;
 
 public class GeometryUtils
 {
 }
+
+
+public class Vector3JsonConverter : JsonConverter<Vector3>
+{
+    public override Vector3 ReadJson(JsonReader reader, Type objectType, Vector3 existingValue, bool hasExistingValue, JsonSerializer serializer)
+    {
+        // Ensure the token is a StartArray
+        if (reader.TokenType != JsonToken.StartArray)
+        {
+            throw new JsonException("Expected a JSON array for Vector3.");
+        }
+
+        // Read the components from the array
+        JArray array = JArray.Load(reader);
+        if (array.Count != 3)
+        {
+            throw new JsonException("Expected an array with exactly 3 elements for Vector3.");
+        }
+
+        float x = array[0].ToObject<float>();
+        float y = array[1].ToObject<float>();
+        float z = array[2].ToObject<float>();
+
+        return new Vector3(x, y, z);
+    }
+
+    public override void WriteJson(JsonWriter writer, Vector3 value, JsonSerializer serializer)
+    {
+        // Write Vector3 as a JSON array
+        writer.WriteStartArray();
+        writer.WriteValue(value.X);
+        writer.WriteValue(value.Y);
+        writer.WriteValue(value.Z);
+        writer.WriteEndArray();
+    }
+}
+
 public static class Vector3Extension
 {
     public static Vector3 Normalized(this Vector3 v)
@@ -14,7 +55,6 @@ public static class Vector3Extension
         return Vector3.Zero;
     }
 }
-
 
 public static class Matrix4x4Extension
 {
@@ -44,18 +84,33 @@ public class MTransform
     }
 }
 
-public class FrameInterpolationInfo
+public class FrameInterpolator
 {
     public int lowIdx = 0;
     public int highIdx = -1;
     public float factor = 0;
-    public float time = 0;
+    public float time = -1;
     public bool isApplicable()
     {
         return highIdx > lowIdx && factor > 0;
     }
-    public FrameInterpolationInfo() { }
-    public FrameInterpolationInfo(float time, List<float> timeSteps, bool justLowIdx = false)
+    public Vector3 interpolate(Vector3 v0, Vector3 v1)
+    {
+        return v0 + (v1 - v0) * factor;
+    }
+
+    public Vector3 interpolate(List<Vector3> frames)
+    {
+        Vector3 v0 = frames[lowIdx];
+        if (!isApplicable())
+        {
+            return v0;
+        }
+        return interpolate(v0, frames[highIdx]);
+
+    }
+    public FrameInterpolator() { }
+    public FrameInterpolator(float time, List<float> timeSteps, bool justLowIdx = false)
     {
         lowIdx = timeSteps.IndexOf(time);
         if (lowIdx >= 0)

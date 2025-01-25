@@ -1,5 +1,4 @@
-﻿using Platform_for_Ergonomics_evaluation_Methods.Importers.Xsens;
-using Platform_for_Ergonomics_evaluation_Methods.Utils;
+﻿using Platform_for_Ergonomics_evaluation_Methods.Utils;
 using System.Diagnostics;
 
 namespace Platform_for_Ergonomics_evaluation_Methods
@@ -18,13 +17,20 @@ namespace Platform_for_Ergonomics_evaluation_Methods
         }
         static ManikinBase? TryParse(string json)
         {
-            ManikinBase m = IMMA.IMMAManikin.TryParse(json);
-            if (m != null)
+            System.Func<string, ManikinBase>[] parsers = {
+                IMMA_BY_ERGO_EXPORT.IMMAManikinFromErgoExport.TryParse,
+                IMMA.IMMAManikin.TryParse,
+                Xsens.XsensManikin.TryParse,
+            };
+            foreach (var parser in parsers)
             {
-                return m;
+                ManikinBase manikin = parser(json);
+                if (manikin != null)
+                {
+                    return manikin;
+                }
             }
-            m = XsensManikin.TryParse(json);
-            return m;
+            return null;
         }
         public static bool ParseMessage(string json)
         {

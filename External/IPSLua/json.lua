@@ -90,8 +90,8 @@ local function encode_table(val, stack)
       if type(k) ~= "string" then
         error("invalid table: mixed or invalid key types")
       end
-      --Tillåt strukturer som innehåller userdata. Userdatavariablerna kommer inte med i json
-      if type(v) ~= "userdata" then
+      --Tillåt strukturer som innehåller userdata och funktioner. Dessa kommer inte med i json
+      if type(v) ~= "userdata" and type(v) ~= "function"  then
         table.insert(res, encode(k, stack) .. ":" .. encode(v, stack))
       end
     end
