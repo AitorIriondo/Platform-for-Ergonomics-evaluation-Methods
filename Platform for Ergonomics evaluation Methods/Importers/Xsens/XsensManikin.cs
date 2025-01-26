@@ -145,7 +145,16 @@ namespace Xsens
         }
         public override Vector3 GetJointPosition(JointID jointID)
         {
-            return frameInterpolator.interpolate(GetJoint(jointID).positions);
+            try
+            {
+                return frameInterpolator.interpolate(GetJoint(jointID).positions);
+            }
+            catch (Exception)
+            {
+
+                throw new Exception("Missing joint: "+ jointID);
+            }
+            
         }
 
 
@@ -163,7 +172,7 @@ namespace Xsens
             foreach (string side in new string[] { "Right", "Left" })
             {
                 Limb arm = new Limb(side + "Arm");
-                foreach (string suffix in new string[] { "GH", "Elbow", "Wrist" })
+                foreach (string suffix in new string[] { "Shoulder", "Elbow", "Wrist" })
                 {
                     arm.AddJoint(side + suffix);
                 }
