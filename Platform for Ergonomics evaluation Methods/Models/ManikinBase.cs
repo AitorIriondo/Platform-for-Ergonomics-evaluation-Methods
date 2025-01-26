@@ -30,7 +30,6 @@ public class Limb
 
 }
 
-
 public abstract class ManikinBase{
     public float time;
     public float weight;
@@ -60,6 +59,17 @@ public abstract class ManikinBase{
     }
     public abstract Vector3 GetJointPosition(JointID jointID);
 
+    public abstract bool HasJoint(JointID jointID);
+
+    public virtual bool TryGetJointPosition(JointID jointID, out Vector3 result)
+    {
+        if (HasJoint(jointID)) { 
+            result = GetJointPosition(jointID);
+            return true;
+        }
+        result = default(Vector3);
+        return false;
+    }
     public virtual List<Limb> GetLimbs()
     {
         return new List<Limb>();
@@ -152,4 +162,7 @@ public enum JointID
     RightThumbProximal,
     RightThumbIntermediate,
     RightThumbDistal,
+
+    RightShoulder,
+    LeftShoulder,
 }

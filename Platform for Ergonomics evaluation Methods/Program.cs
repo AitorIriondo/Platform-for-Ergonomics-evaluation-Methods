@@ -1,4 +1,3 @@
-using IMMA_BY_ERGO_EXPORT;
 using Platform_for_Ergonomics_evaluation_Methods;
 using Platform_for_Ergonomics_evaluation_Methods.Services;
 using Platform_for_Ergonomics_evaluation_Methods.Utils;

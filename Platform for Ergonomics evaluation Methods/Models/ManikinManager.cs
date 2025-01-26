@@ -18,7 +18,6 @@ namespace Platform_for_Ergonomics_evaluation_Methods
         static ManikinBase? TryParse(string json)
         {
             System.Func<string, ManikinBase>[] parsers = {
-                IMMA_BY_ERGO_EXPORT.IMMAManikinFromErgoExport.TryParse,
                 IMMA.IMMAManikin.TryParse,
                 Xsens.XsensManikin.TryParse,
             };

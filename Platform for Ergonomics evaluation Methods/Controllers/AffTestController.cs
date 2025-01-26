@@ -27,40 +27,59 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         {
             return new Vector3(-v.Y, v.X, v.Z);
         }
-        Aff.Input GetAffInput(ManikinBase manikin)
+        static void AddIfUnique<T>(List<T> list, T item)
+        {
+            if(list != null && !list.Contains(item))
+            {
+                list.Add(item);
+            }
+        }
+        Aff.Input GetAffInput(ManikinBase manikin, List<string> messages = null)
         {
             Aff.Input input = new Aff.Input();
+            bool TryGetAffJointPosition(JointID jointId, out Vector3 pos)
+            {
+                bool ret = manikin.TryGetJointPosition(jointId, out pos);
+                pos = Pem2Aff(pos);
+                return ret;
+            }
+            void PopulateArm(Aff.ArmInput arm)
+            {
+                if (!TryGetAffJointPosition(arm == input.left ? JointID.LeftShoulder : JointID.RightShoulder, out arm.shoulder))
+                {
+                    JointID shoulder = arm == input.left ? JointID.LeftGH : JointID.RightGH;
+                    TryGetAffJointPosition(shoulder, out arm.shoulder);
+                    AddIfUnique(messages, "Shoulder is substituted by GH");
+                }
+                TryGetAffJointPosition(arm == input.left ? JointID.LeftElbow : JointID.RightElbow, out arm.elbow);
+                TryGetAffJointPosition(arm == input.left ? JointID.LeftWrist : JointID.RightWrist, out arm.wrist);
+                if (!TryGetAffJointPosition(arm == input.left ? JointID.LeftMiddleProximal : JointID.RightMiddleProximal, out arm.knuckle))
+                {
+                    Vector3 forearm = arm.elbow - arm.wrist;
+                    float knuckleDist = forearm.Length() * .36f;
+                    arm.knuckle = arm.wrist + knuckleDist * forearm.Normalized();
+                    AddIfUnique(messages, "Knuckle is assumed to be positioned along the line of the forearm, at a distance from the wrist equal to 36% of the forearm's length");
+                }
+                Vector3 force = arm == input.left ? manikin.GetLeftHandForce() : manikin.GetRightHandForce();
+                if (force.Length() == 0)
+                {
+                    force.Z = 0.00001f;
+                }
+                arm.actualLoad = force.Length();
+                arm.forceDirection = Pem2Aff(force.Normalized());
+            }
             input.bodyMass = 70;
             input.stature = 1.63f;
             input.female = true;
-            input.C7T1 = Pem2Aff(manikin.GetJointPosition(JointID.C7T1));
-            input.L5S1 = Pem2Aff(manikin.GetJointPosition(JointID.L5S1));
             input.percentCapable = 75;
-
-            input.left.knuckle = Pem2Aff(manikin.GetJointPosition(JointID.LeftMiddleProximal));
-            input.left.wrist = Pem2Aff(manikin.GetJointPosition(JointID.LeftWrist)); 
-            input.left.elbow = Pem2Aff(manikin.GetJointPosition(JointID.LeftElbow)); 
-            input.left.shoulder = Pem2Aff(manikin.GetJointPosition(JointID.LeftGH)); 
-            Vector3 force = manikin.GetLeftHandForce();
-            if (force.Length() == 0)
+            if(!TryGetAffJointPosition(JointID.C7T1, out input.C7T1))
             {
-                force.Z = 0.00001f;
+                TryGetAffJointPosition(JointID.C6C7, out input.C7T1);
+                AddIfUnique(messages, "C7T1 is substituted by C6C7");
             }
-            input.left.actualLoad = force.Length();
-            input.left.forceDirection = Pem2Aff(force.Normalized());
-
-            input.right.knuckle = Pem2Aff(manikin.GetJointPosition(JointID.RightMiddleProximal));
-            input.right.wrist = Pem2Aff(manikin.GetJointPosition(JointID.RightWrist));
-            input.right.elbow = Pem2Aff(manikin.GetJointPosition(JointID.RightElbow));
-            input.right.shoulder = Pem2Aff(manikin.GetJointPosition(JointID.RightGH));
-
-            force = manikin.GetRightHandForce();
-            if (force.Length() == 0)
-            {
-                force.Z = 0.00001f;
-            }
-            input.right.actualLoad = force.Length();
-            input.right.forceDirection = Pem2Aff(force.Normalized());
+            input.L5S1 = Pem2Aff(manikin.GetJointPosition(JointID.L5S1));
+            PopulateArm(input.left);
+            PopulateArm(input.right);
             return input;
 
         }
@@ -69,6 +88,9 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100)
         {
+            System.GC.Collect();
+            Debug.WriteLine("GC.Collect GetGraphValArrs");
+
             try
             {
                 ManikinBase? manikin = ManikinManager.loadedManikin;
@@ -76,6 +98,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 {
                     return BadRequest();
                 }
+                List<string> messages = new List<string>();
                 List<float> timestamps = new List<float>();
                 float t = 0;
                 int frame = 0;
@@ -90,7 +113,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                     timestamps.Add(t);
                     manikin.SetTime(t);
                     Aff aff = new Aff();
-                    aff.input = GetAffInput(manikin);
+                    aff.input = GetAffInput(manikin, messages);
                     aff.input.percentCapable = percentCapable;
                     aff.input.left.actualLoad *= demoLoadPercent / 100;
                     aff.input.right.actualLoad *= demoLoadPercent / 100;
@@ -116,7 +139,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
                 {
                     labels.Add("%Cap for load");
                 }
-                return Json(new { timestamps, vals, labels });
+                return Json(new { timestamps, vals, labels, messages });
 
             }
             catch (Exception ex)

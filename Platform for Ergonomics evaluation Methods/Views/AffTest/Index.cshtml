@@ -51,6 +51,7 @@
         width: 500px;
     }
 </style>
+<div id="messagePanel"></div>
 <div id="graphMain">No valid manikin loaded</div>
 <div class="slider-container">
     <label class="slider-label">
@@ -169,6 +170,7 @@
             },
             success: function (response) {
                 //console.log(response);
+                document.getElementById("messagePanel").innerHTML = response.messages.join("<br>");
                 populateGraphs(response);
                 
             },

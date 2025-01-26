@@ -4,10 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO.Pipelines;
 using System.Numerics;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text.Json.Nodes;
-using Microsoft.VisualBasic;
+
 
 namespace IMMA;
 
@@ -43,17 +40,8 @@ public class IMMAManikin : ManikinBase
     public List<Joint> joints = new List<Joint>();
     public bool interpolateTorque = false;
     public bool interpolateContactForce = false;
-    protected Dictionary<JointID, Joint> jointDict = new Dictionary<JointID, Joint>();
-
-    public FrameInterpolator getFrameInterpolationInfo(float time, bool justLowIdx = false)
-    {
-        return new FrameInterpolator(time, postureTimeSteps, justLowIdx);
-    }
-
-    public int getFrameIdxAtOrBeforeTime(float time)
-    {
-        return getFrameInterpolationInfo(time, true).lowIdx;
-    }
+    Dictionary<JointID, string> jointIdToNameMap = new Dictionary<JointID, string>();
+    protected Dictionary<string, Joint> jointsByName = new Dictionary<string, Joint>();
 
     public override List<Limb> GetLimbs()
     {
@@ -128,9 +116,37 @@ public class IMMAManikin : ManikinBase
         return GetControlPointForce("Right Hand");
     }
 
-    public IMMAManikin()
+    public IMMAManikin(string filename)
     {
+        var settings = new JsonSerializerSettings
+        {
+            Converters = { new Vector3JsonConverter() },
+            Formatting = Formatting.Indented,
+        };
+        JsonConvert.PopulateObject(File.ReadAllText(filename), this, settings);
+        if (name.StartsWith("Male"))
+        {
+            gender = Gender.Male;
+        }
+        else if (name.StartsWith("Female"))
+        {
+            gender = Gender.Female;
+        }
+        foreach (Joint j in joints)
+        {
+            jointsByName.Add(j.name, j);
+            string jIdName = j.name.Replace("_", "");
+            foreach(JointID jId in System.Enum.GetValues(typeof(JointID)))
+            {
+                if(jId.ToString() == jIdName)
+                {
+                    jointIdToNameMap.Add(jId, j.name);
+                }
+            }
+        }
+
     }
+
     [Serializable]
     class Message
     {
@@ -142,25 +158,10 @@ public class IMMAManikin : ManikinBase
     {
         try
         {
-
             Message msg = JsonConvert.DeserializeObject<Message>(json);
-            if (msg.parser == "IMMAManikinLua")
+            if (msg.parser == "IMMAManikin")
             {
-                var settings = new JsonSerializerSettings
-                {
-                    Converters = { new Vector3JsonConverter() },
-                    Formatting = Formatting.Indented,
-                };
-                IMMAManikin manikin = JsonConvert.DeserializeObject<IMMAManikin>(File.ReadAllText(msg.manikinFilenames[0]), settings);
-                if (manikin.name.StartsWith("Male"))
-                {
-                    manikin.gender = Gender.Male;
-                }
-                else if (manikin.name.StartsWith("Female"))
-                {
-                    manikin.gender = Gender.Female;
-                }
-                return manikin;
+                return new IMMAManikin(msg.manikinFilenames[0]);    
             }
         }
         catch (JsonReaderException ex)
@@ -174,39 +175,17 @@ public class IMMAManikin : ManikinBase
         }
         return null;
     }
-
-    protected Joint getJointByName(string name)
+    public override bool HasJoint(JointID jointID)
     {
-        foreach (var joint in joints)
-        {
-            if (joint.name.Replace("_", "") == name)
-            {
-                return joint;
-            }
-        }
-        return null;
+        return jointIdToNameMap.ContainsKey(jointID);
     }
     protected Joint GetJoint(JointID jointID)
     {
-        if (jointDict.ContainsKey(jointID))
+        if(HasJoint(jointID))
         {
-            return jointDict[jointID];
+            return jointsByName[jointIdToNameMap[jointID]];
         }
-        Joint ret = null;
-        if (jointID == JointID.C7T1)
-        {
-            ret = getJointByName("C6C7");
-        }
-        else
-        {
-            ret = getJointByName(jointID.ToString());
-        }
-        if (ret == null)
-        {
-            throw new Exception("Missing joint " + jointID.ToString());
-        }
-        jointDict[jointID] = ret;
-        return ret;
+        return null;
     }
 
     public override Vector3 GetJointPosition(JointID jointID)

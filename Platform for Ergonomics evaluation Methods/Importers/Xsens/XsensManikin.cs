@@ -3,112 +3,109 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Xml;
+using System.Xml.Linq;
 
 namespace Xsens
 {
     public class XsensManikin : ManikinBase
     {
-        public class Frame
+
+        static string[] parseStrings(XmlElement element, string tagName)
         {
-            public float timeSec = 0;
-            public string type = "";
-            public List<Vector3> position = new List<Vector3>();
-            public List<Quaternion> orientation = new List<Quaternion>();
-            public void Parse(XmlElement element)
+            try
             {
-                string[] getStrings(string tagName)
-                {
-                    try
-                    {
-                        return element.GetElementsByTagName(tagName)[0].InnerText.Split(" ");
-                    }
-                    catch (Exception)
-                    {
+                return element.GetElementsByTagName(tagName)[0].InnerText.Split(" ");
+            }
+            catch (Exception)
+            {
 
-                    }
-                    return new string[0];
-                }
+            }
+            return new string[0];
+        }
 
-                List<float> getFloats(string tagName)
-                {
-                    List<float> ret = new List<float>();
-                    foreach(string str in getStrings(tagName))
-                    {
-                        ret.Add(float.Parse(str.Replace(".",",")));
-                    }
-                    return ret;
-                }
-                List<Vector3> getVector3s(string tagName)
-                {
-                    List<Vector3> ret = new List<Vector3>();
-                    List<float> floats=getFloats(tagName);
-                    for(int i = 0; i < floats.Count; i += 3)
-                    {
-                        ret.Add(new Vector3(floats[i], floats[i+1], floats[i+2]));
-                    }
-                    return ret;
-                }
-                position = getVector3s("position");
-                List<float> floats = getFloats("orientation");
-                for (int i = 0; i < floats.Count; i += 4)
-                {
-                    orientation.Add(new Quaternion(floats[i], floats[i + 1], floats[i + 2], floats[i + 3]));
-                }
-                timeSec = float.Parse(element.GetAttribute("time"))/1000;
-                type = element.GetAttribute("type");
+        static List<float> parseFloats(XmlElement element, string tagName)
+        {
+            List<float> ret = new List<float>();
+            foreach (string str in parseStrings(element, tagName))
+            {
+                ret.Add(float.Parse(str.Replace(".", ",")));
+            }
+            return ret;
+        }
+        static List<Vector3> parseVector3s(XmlElement element,string tagName)
+        {
+            List<Vector3> ret = new List<Vector3>();
+            List<float> floats = parseFloats(element, tagName);
+            for (int i = 0; i < floats.Count; i += 3)
+            {
+                ret.Add(new Vector3(floats[i], floats[i + 1], floats[i + 2]));
+            }
+            return ret;
+        }
+
+        Dictionary<JointID, string> jointIdToNameMap = new Dictionary<JointID, string>();
+        protected Dictionary<string, Joint> jointsByName = new Dictionary<string, Joint>();
+
+        public class Joint
+        {
+            public string name = "";
+            public List<Vector3> positions = new List<Vector3>();
+            public Joint(string name) { 
+                this.name = name;
             }
         }
-        XmlDocument doc = new XmlDocument();
-        List<string> jointLabels = new List<string>();
-        List<string> segmentLabels = new List<string>();
-        List<Frame> frames = new List<Frame>();
-        Dictionary<JointID, string> jointLabelMap = new Dictionary<JointID, string>();
         public XsensManikin(string filename)
         {
-            
+            XmlDocument doc = new XmlDocument();
             doc.LoadXml(File.ReadAllText(filename));
-            XmlNodeList joints = doc.GetElementsByTagName("joint");
-            foreach (XmlElement joint in joints)
+            XmlNodeList xmlJoints = doc.GetElementsByTagName("joint");
+            List<Joint> orderedJoints = new List<Joint>();
+            foreach (XmlElement xmlJoint in xmlJoints)
             {
-                string label = joint.GetAttribute("label");
-                jointLabels.Add(label);
+                Joint joint = new Joint(xmlJoint.GetAttribute("label"));
+                orderedJoints.Add(joint);
+                jointsByName.Add(joint.name, joint);
 
             }
-            jointLabelMap.Add(JointID.L5S1, "jL5S1");
-            jointLabelMap.Add(JointID.L3L4, "jL4L3");
-            jointLabelMap.Add(JointID.T12L1, "jL1T12");
-            jointLabelMap.Add(JointID.C7T1, "jT1C7");
-            jointLabelMap.Add(JointID.RightGH, "jRightShoulder");
-            jointLabelMap.Add(JointID.RightElbow, "jRightElbow");
-            jointLabelMap.Add(JointID.RightWrist, "jRightWrist");
-            jointLabelMap.Add(JointID.LeftGH, "jLeftShoulder");
-            jointLabelMap.Add(JointID.LeftElbow, "jLeftElbow");
-            jointLabelMap.Add(JointID.LeftWrist, "jLeftWrist");
-            jointLabelMap.Add(JointID.RightHip, "jRightHip");
-            jointLabelMap.Add(JointID.RightKnee, "jRightKnee");
-            jointLabelMap.Add(JointID.RightAnkle, "jRightAnkle");
-            jointLabelMap.Add(JointID.LeftHip, "jLeftHip");
-            jointLabelMap.Add(JointID.LeftKnee, "jLeftKnee");
-            jointLabelMap.Add(JointID.LeftAnkle, "jLeftAnkle");
-            Debug.WriteLine("Joints.Count:" + joints.Count);
-
+            List<string> segmentLabels = new List<string>();
             foreach (XmlElement segment in doc.GetElementsByTagName("segment"))
             {
                 string label = segment.GetAttribute("label");
                 segmentLabels.Add(label);
             }
-            Debug.WriteLine("Joints.Count:" + joints.Count);
             foreach(XmlNode frameNode in doc.GetElementsByTagName("frame"))
             {
-                Frame frame = new Frame();
-                frame.Parse((XmlElement)frameNode);
-                if(frame.type == "normal")
+                XmlElement frame = (XmlElement)frameNode;
+                if(frame.GetAttribute("type") == "normal")
                 {
-                    frames.Add(frame);
-                    postureTimeSteps.Add(frame.timeSec);
+                    List<Vector3> positions = parseVector3s(frame, "position");
+                    postureTimeSteps.Add(float.Parse(frame.GetAttribute("time")) / 1000);
+                    for (int i = 0; i < orderedJoints.Count; i++)
+                    {
+                        string segName = ((XmlElement)xmlJoints[i]).GetElementsByTagName("connector2")[0].InnerText.Split("/")[0];
+                        int segIdx = segmentLabels.IndexOf(segName);
+                        orderedJoints[i].positions.Add(positions[segIdx]);
+                    }
                 }
             }
-            Debug.WriteLine(frames[0].position.Count / 3);
+
+            jointIdToNameMap.Add(JointID.L5S1, "jL5S1");
+            jointIdToNameMap.Add(JointID.L3L4, "jL4L3");
+            jointIdToNameMap.Add(JointID.T12L1, "jL1T12");
+            jointIdToNameMap.Add(JointID.C7T1, "jT1C7");
+            jointIdToNameMap.Add(JointID.RightShoulder, "jRightShoulder");
+            jointIdToNameMap.Add(JointID.RightElbow, "jRightElbow");
+            jointIdToNameMap.Add(JointID.RightWrist, "jRightWrist");
+            jointIdToNameMap.Add(JointID.LeftShoulder, "jLeftShoulder");
+            jointIdToNameMap.Add(JointID.LeftElbow, "jLeftElbow");
+            jointIdToNameMap.Add(JointID.LeftWrist, "jLeftWrist");
+            jointIdToNameMap.Add(JointID.RightHip, "jRightHip");
+            jointIdToNameMap.Add(JointID.RightKnee, "jRightKnee");
+            jointIdToNameMap.Add(JointID.RightAnkle, "jRightAnkle");
+            jointIdToNameMap.Add(JointID.LeftHip, "jLeftHip");
+            jointIdToNameMap.Add(JointID.LeftKnee, "jLeftKnee");
+            jointIdToNameMap.Add(JointID.LeftAnkle, "jLeftAnkle");
+            
             Debug.WriteLine(GetJointPosition(JointID.LeftElbow));
         }
         [System.Serializable]
@@ -138,35 +135,19 @@ namespace Xsens
             }
             return null;
         }
-
-        XmlElement GetJointElement(string label)
+        Joint? GetJoint(JointID jointID)
         {
-            return (XmlElement)doc.GetElementsByTagName("joint")[jointLabels.IndexOf(label)];
+            return HasJoint(jointID) ? jointsByName[jointIdToNameMap[jointID]] : null;
         }
-        Vector3 GetJointPositionAtFrame(JointID jointID, int frameIdx)
+        public override bool HasJoint(JointID jointID)
         {
-            string jointLabel = jointLabelMap[jointID];
-            string segName = GetJointElement(jointLabel).GetElementsByTagName("connector2")[0].InnerText.Split("/")[0];
-            int segIdx = segmentLabels.IndexOf(segName);
-            Frame frame = frames[frameIdx];
-            return frame.position[segIdx];
-            throw new Exception("Missing joint " + jointID.ToString());
+            return jointIdToNameMap.ContainsKey(jointID);
         }
-        Vector3 interpolate(Vector3 v0, Vector3 v1, float factor)
-        {
-            return v0 + (v1 - v0) * factor;
-        }
-
         public override Vector3 GetJointPosition(JointID jointID)
         {
-            FrameInterpolator interpolation = new FrameInterpolator(time, postureTimeSteps);
-            Vector3 v0 = GetJointPositionAtFrame(jointID, interpolation.lowIdx);
-            if (!interpolation.isApplicable())
-            {
-                return v0;
-            }
-            return interpolate(v0, GetJointPositionAtFrame(jointID, interpolation.highIdx), interpolation.factor);
+            return frameInterpolator.interpolate(GetJoint(jointID).positions);
         }
+
 
         public override List<Limb> GetLimbs()
         {

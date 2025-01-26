@@ -189,8 +189,9 @@ print("Exported to ",outdir, ". Time: ", os.clock()-t )
 
 local pemData = {
   src = "IPS",
-  parser = "IMMAManikinLua",
-  manikinFilenames = manikinFilenames
+  parser = "IMMAManikin",
+  parserVersion = "0.1",
+  manikinFilenames = manikinFilenames,
 }
 
 local cmd="curl -X POST http://127.0.0.1:5000 --data-binary \""..string.gsub(JSON.encode(pemData), "\"", "\\\"").."\" --no-buffer --max-time 1"

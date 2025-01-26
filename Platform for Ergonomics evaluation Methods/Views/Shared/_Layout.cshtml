@@ -81,8 +81,7 @@
             }
             document.getElementById("loadBtnPanel").appendChild(btn);
         }
-        addTestMsgBtn("ImmaErgo", "{\"dir\":\"TestData/IpsErgoExportEwass/\",\"src\":\"IPS\",\"parser\":\"IMMAManikin\"}");
-        addTestMsgBtn("ImmaLua", "{\"manikinFilenames\":[\"TestData/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"src\":\"IPS\",\"parser\":\"IMMAManikinLua\"}");
+        addTestMsgBtn("Immatest", "{\"manikinFilenames\":[\"TestData/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"src\":\"IPS\",\"parser\":\"IMMAManikin\",\"version=\":\"0.1\"}");
         addTestMsgBtn("Emmatest", "{\"file\":\"TestData/Emma-001.mvnx\",\"parser\":\"XsensManikin\"}");
     </script>
     @await RenderSectionAsync("Scripts", required: false)
