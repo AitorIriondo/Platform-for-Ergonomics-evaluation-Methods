@@ -194,7 +194,7 @@ local pemData = {
   manikinFilenames = manikinFilenames,
 }
 
-local cmd="curl -X POST http://127.0.0.1:5000 --data-binary \""..string.gsub(JSON.encode(pemData), "\"", "\\\"").."\" --no-buffer --max-time 1"
+local cmd="curl -X POST https://127.0.0.1:5000 --data-binary \""..string.gsub(JSON.encode(pemData), "\"", "\\\"").."\" --no-buffer --max-time 1"
 print(cmd)
 local process = io.popen(cmd)
 local resultJson=process:read("*a")
