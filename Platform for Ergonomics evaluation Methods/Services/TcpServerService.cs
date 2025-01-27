@@ -14,13 +14,19 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
 {
     public class TcpServerService
     {
+        static void WriteLine(string line)
+        {
+            Console.WriteLine(line);
+            Debug.WriteLine(line);
+
+        }
         private TcpListener _tcpListener;
         private readonly JsonDeserializer _jsonDeserializer;
         private readonly MessageStorageService _messageStorageService;
 
         public TcpServerService(JsonDeserializer jsonDeserializer, MessageStorageService messageStorageService)
         {
-            _tcpListener = new TcpListener(System.Net.IPAddress.Any, 5000); // Port 5000
+            _tcpListener = new TcpListener(System.Net.IPAddress.Any, 5050); // Port 5050
             _jsonDeserializer = new JsonDeserializer();  // Initialize the deserializer
             _messageStorageService = messageStorageService;
         }
@@ -33,12 +39,13 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
         private async Task ListenForClients()
         {
             _tcpListener.Start();
-            Debug.WriteLine("TCP Server is running...");
+            WriteLine("TCP Server is running...");
 
             while (true)
             {
+                WriteLine("Waiting for client..");
                 TcpClient client = await _tcpListener.AcceptTcpClientAsync();
-                Console.WriteLine("Client connected");
+                WriteLine("Client connected");
                 HandleClient(client);
             }
         }
@@ -49,6 +56,7 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
             {
                 using (NetworkStream stream = client.GetStream())
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true })
                 {
                     string receivedText = await reader.ReadToEndAsync();
                     string jsonMessage = receivedText;
@@ -77,16 +85,27 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Services
 
                     // Delegate the processing of the Manikin object to the JsonDeserializer
                     _jsonDeserializer.ProcessManikin(manikin);
+                    string responseMessage = "HTTP/1.1 200 OK\r\n" +
+                                                         "Content-Type: application/json\r\n" +
+                                                         "Content-Length: 13\r\n" +
+                                                         "\r\n" +
+                                                         "{\"status\":\"ok\"}";
+
+                    await writer.WriteAsync(responseMessage);
+                    await writer.FlushAsync();
+                    WriteLine(responseMessage);
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error handling client: {ex.Message}");
+                WriteLine($"Error handling client: {ex.Message}");
             }
             finally
             {
                 client.Close();
             }
+            WriteLine("Handle Client Done");
+
         }
     }
 }
