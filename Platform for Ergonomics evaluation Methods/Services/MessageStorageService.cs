@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Services
+namespace PEM.Services
 {
     public class MessageStorageService
     {

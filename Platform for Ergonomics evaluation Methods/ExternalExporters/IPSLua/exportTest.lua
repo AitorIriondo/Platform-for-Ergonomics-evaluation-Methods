@@ -25,6 +25,7 @@ end
 local function initManikin(ipsFamily, manikinIdx)
   print(ipsFamily)
   local manikin = {
+    sceneName=Ips.getSceneName(),
     operationSequenceName="",
     familyName=ipsFamily:getVisualization():getLabel(),
     familyID=ipsFamily:getID(),

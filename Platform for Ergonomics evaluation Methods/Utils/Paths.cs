@@ -1,11 +1,27 @@
-﻿namespace Platform_for_Ergonomics_evaluation_Methods.Utils
+﻿namespace PEM.Utils
 {
     public class Paths
     {
+        static string CreateIfMissing(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            return path;
+        }
         public static string Root
         {
-            get {
-                return Environment.GetEnvironmentVariable("LOCALAPPDATA")+"/PEM/";
+            get
+            {
+                return CreateIfMissing(Environment.GetEnvironmentVariable("LOCALAPPDATA") + "/PEM/");
+            }
+        }
+        public static string Uploads
+        {
+            get
+            {
+                return CreateIfMissing(Root + "Uploads/");
             }
         }
     }

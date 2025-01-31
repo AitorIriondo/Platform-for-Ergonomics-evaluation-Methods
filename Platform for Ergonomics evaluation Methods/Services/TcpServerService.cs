@@ -5,12 +5,12 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Utils;
-using Platform_for_Ergonomics_evaluation_Methods.Models;
-using Platform_for_Ergonomics_evaluation_Methods.Services;
+using PEM.Utils;
+using PEM.Models;
+using PEM.Services;
 using System.Diagnostics;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Services
+namespace PEM.Services
 {
     public class TcpServerService
     {

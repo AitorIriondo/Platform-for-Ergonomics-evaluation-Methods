@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Models;
+using PEM.Models;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Utils
+namespace PEM.Utils
 {
     public class JsonDeserializer
     {

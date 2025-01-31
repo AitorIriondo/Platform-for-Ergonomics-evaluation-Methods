@@ -1,9 +1,10 @@
-using Platform_for_Ergonomics_evaluation_Methods;
-using Platform_for_Ergonomics_evaluation_Methods.Services;
-using Platform_for_Ergonomics_evaluation_Methods.Utils;
+using PEM;
+using PEM.Services;
+using PEM.Utils;
 using System;
 using System.Diagnostics;
 
+//var m = new Xsens.XsensManikin("Testdata/Xsens/Emma-001.mvnx");
 //Environment.Exit(0);
 
 var builder = WebApplication.CreateBuilder(args);

@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Services;
+using PEM.Services;
 using System.Diagnostics;
 using System.Numerics;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
+namespace PEM.Controllers
 {
     public class AffTestController : Controller
     {

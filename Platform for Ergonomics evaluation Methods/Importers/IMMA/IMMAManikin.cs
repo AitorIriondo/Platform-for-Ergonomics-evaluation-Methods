@@ -10,6 +10,7 @@ namespace IMMA;
 
 public class IMMAManikin : ManikinBase
 {
+    public string sceneName = "";
     public string operationSequenceName = "";
     public string ipsFamily = "";
     public string familyID = "";
@@ -191,5 +192,9 @@ public class IMMAManikin : ManikinBase
     public override Vector3 GetJointPosition(JointID jointID)
     {
         return frameInterpolator.interpolate(GetJoint(jointID).positions);
+    }
+    public override string GetDescriptiveName()
+    {
+        return sceneName + " " + operationSequenceName + " " + ipsFamily + " " + name;
     }
 }

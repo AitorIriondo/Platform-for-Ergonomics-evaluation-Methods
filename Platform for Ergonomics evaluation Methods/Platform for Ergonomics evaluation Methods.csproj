@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Platform_for_Ergonomics_evaluation_Methods</RootNamespace>
+    <RootNamespace>PEM</RootNamespace>
     <AssemblyName>Pem</AssemblyName>
   </PropertyGroup>
 

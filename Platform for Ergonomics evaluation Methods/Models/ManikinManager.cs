@@ -1,7 +1,7 @@
-﻿using Platform_for_Ergonomics_evaluation_Methods.Utils;
+﻿using PEM.Utils;
 using System.Diagnostics;
 
-namespace Platform_for_Ergonomics_evaluation_Methods
+namespace PEM
 {
     public class ManikinManager
     {

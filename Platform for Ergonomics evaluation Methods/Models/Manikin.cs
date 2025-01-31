@@ -1,4 +1,4 @@
-﻿namespace Platform_for_Ergonomics_evaluation_Methods.Models
+﻿namespace PEM.Models
 {
     public class Manikin
     {

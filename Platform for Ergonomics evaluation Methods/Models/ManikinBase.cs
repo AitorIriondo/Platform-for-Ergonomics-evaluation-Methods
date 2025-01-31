@@ -46,6 +46,10 @@ public abstract class ManikinBase{
             return _frameInterpolator;
         } 
     }
+    public virtual string GetDescriptiveName()
+    {
+        return "";
+    }
     public float GetTimelineDuration()
     {
         if(postureTimeSteps.Count > 0)

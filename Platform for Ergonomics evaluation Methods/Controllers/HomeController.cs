@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Platform_for_Ergonomics_evaluation_Methods.Models;
-using Platform_for_Ergonomics_evaluation_Methods.Services;
+using PEM.Models;
+using PEM.Services;
 using System.Diagnostics;
 using System.Numerics;
 using System.Text.Json.Nodes;
 
-namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
+namespace PEM.Controllers
 {
     public class HomeController : Controller
     {
@@ -47,7 +47,13 @@ namespace Platform_for_Ergonomics_evaluation_Methods.Controllers
         [HttpGet]
         public IActionResult GetLoadedManikinInfo()
         {
-            string type = ManikinManager.loadedManikin != null ? ManikinManager.loadedManikin.GetType().ToString() : "None, Run exportTest.lua [TODO: Change this text]";
+            string type = "None";
+            if (ManikinManager.loadedManikin != null)
+            {
+                type = ManikinManager.loadedManikin.GetType().ToString();
+                string description = ManikinManager.loadedManikin.GetDescriptiveName();
+                return Json(new { type, description });
+            }
             return Json(new { type });
         }
 

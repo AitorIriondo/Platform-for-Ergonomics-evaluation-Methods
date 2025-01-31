@@ -31,9 +31,10 @@
         </nav>
         <div>Loaded Manikin:<div id="loaded_manikin_info" style="display: inline-block"></div></div>
         <div id="loadBtnPanel">
-            Load testdata
+            <button onclick="fetch('/Home/LoadLastManikin', {method: 'GET'});">Load Recent</button>
+            <button onclick="uploadFile('XsensManikin', '.mvnx')">Upload Xsens</button>
         </div>
-        <button onclick="fetch('/Home/LoadLastManikin', {method: 'GET'});">Load Last</button>
+
     </header>
     <div class="container">
         <main role="main" class="pb-3">
@@ -81,8 +82,39 @@
             }
             document.getElementById("loadBtnPanel").appendChild(btn);
         }
-        addTestMsgBtn("Immatest", "{\"manikinFilenames\":[\"Testdata/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"src\":\"IPS\",\"parser\":\"IMMAManikin\",\"version=\":\"0.1\"}");
-        addTestMsgBtn("Emmatest", "{\"file\":\"Testdata/Xsens/Emma-001.mvnx\",\"parser\":\"XsensManikin\"}");
+        addTestMsgBtn("Load IMMA test", "{\"manikinFilenames\":[\"Testdata/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"src\":\"IPS\",\"parser\":\"IMMAManikin\",\"version=\":\"0.1\"}");
+        addTestMsgBtn("Load Xsens test", "{\"file\":\"Testdata/Xsens/Emma-001.mvnx\",\"parser\":\"XsensManikin\"}");
+
+        function uploadFile(parserName, extension) {
+            const fileInput = document.createElement("input");
+            fileInput.type="file";
+            fileInput.accept = extension;
+            fileInput.onchange = async function() {
+                if (!fileInput.files.length) {
+                    return;
+                }
+
+                const file = fileInput.files[0];
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("parser", parserName);
+                try {
+                    const response = await fetch("api/FileUpload/upload", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const result = await response;
+                    console.log(result);
+                    location.reload();
+                } catch (error) {
+                    console.error("Error uploading file:", error);
+                }
+
+            }
+            fileInput.click();
+        }
+
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

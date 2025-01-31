@@ -45,7 +45,7 @@ namespace Xsens
 
         Dictionary<JointID, string> jointIdToNameMap = new Dictionary<JointID, string>();
         protected Dictionary<string, Joint> jointsByName = new Dictionary<string, Joint>();
-
+        protected string descriptiveName = "";
         public class Joint
         {
             public string name = "";
@@ -58,6 +58,14 @@ namespace Xsens
         {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(File.ReadAllText(filename));
+            try
+            {
+                descriptiveName = doc.GetElementsByTagName("comment")[0].InnerText;
+            }
+            catch (Exception e)
+            {
+                Debug.Print(e.StackTrace);
+            }
             XmlNodeList xmlJoints = doc.GetElementsByTagName("joint");
             List<Joint> orderedJoints = new List<Joint>();
             foreach (XmlElement xmlJoint in xmlJoints)
@@ -109,7 +117,7 @@ namespace Xsens
             Debug.WriteLine(GetJointPosition(JointID.LeftElbow));
         }
         [System.Serializable]
-        class Message
+        public class Message
         {
             public string parser = "";
             public string file = "";
@@ -187,6 +195,9 @@ namespace Xsens
             }
             return limbList;
         }
-
+        public override string GetDescriptiveName()
+        {
+            return descriptiveName;
+        }
     }
 }
