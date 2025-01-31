@@ -1,5 +1,11 @@
-using Platform_for_Ergonomics_evaluation_Methods.Services;
-using Platform_for_Ergonomics_evaluation_Methods.Utils;
+using PEM;
+using PEM.Services;
+using PEM.Utils;
+using System;
+using System.Diagnostics;
+
+//var m = new Xsens.XsensManikin("Testdata/Xsens/Emma-001.mvnx");
+//Environment.Exit(0);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +24,11 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    Process.Start(new ProcessStartInfo
+    {
+        FileName = "http://localhost:5000",
+        UseShellExecute = true // Ensures it uses the system shell to open the browser
+    });
 }
 
 app.UseHttpsRedirection();
@@ -34,5 +45,4 @@ tcpServer.StartServer(); // Starts the TCP server in the background
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
 app.Run();

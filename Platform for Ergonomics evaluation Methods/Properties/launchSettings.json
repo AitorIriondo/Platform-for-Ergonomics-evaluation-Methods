@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "Platform_for_Ergonomics_evaluation_Methods": {
+    "PEM": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

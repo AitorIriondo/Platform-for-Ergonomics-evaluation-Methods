@@ -1,0 +1,79 @@
+﻿@{
+    ViewData["Title"] = "StickieTest";
+
+}
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<style>
+
+    canvas{    
+        height: 300px;    
+    }
+    .slider-container {
+        text-align: center;
+        font-family: Arial, sans-serif;
+        margin: 20px;
+    }
+
+    .slider-label {
+        margin-bottom: 10px;
+        font-size: 18px;
+        display: block;
+    }
+
+    .slider-value {
+        font-weight: bold;
+        color: #007BFF;
+    }
+    .slider{
+        width: 500px;
+    }
+</style>
+
+
+<div class="slider-container">
+    <label class="slider-label">
+        Time: <span id="frameSliderValue" class="slider-value">0 s</span>
+    </label>
+    <input class="slider" type="range" id="frameSlider" min="0" max="0" value="0">
+</div>
+<div id="stickieViewContainer"></div>
+<script src="~/js/three.js"></script>
+<script src="~/js/StickieView.js"></script>
+<script src="~/js/StickManikin.js"></script>
+<script>
+    function stickieStart(){
+        var stickieView;
+        const frameSlider = document.getElementById('frameSlider');
+        frameSlider.valLabel = document.getElementById('frameSliderValue');
+        frameSlider.addEventListener('input', function () {
+            var frame = stickieView.stickie.setFrameIdx(this.value);
+            this.valLabel.textContent = ~~(frame.time * 100) / 100 + " s";
+        });
+        var stickieViewContainer = document.getElementById("stickieViewContainer");
+        stickieViewContainer.style.width = "300px";
+        stickieViewContainer.style.height = stickieViewContainer.style.width;
+        stickieView = new StickieView(stickieViewContainer);
+
+        $.ajax({
+            url: '@Url.Action("GetStickieData", "StickieTest")',
+            method: 'GET',
+            data: {},
+            success: function (response) {
+                //console.log(response);
+                var stickie = new StickManikin(response);
+                //console.log(stickie);
+                stickieView.setStickie(stickie);
+                frameSlider.max = stickie.data.frames.length;
+            },
+            error: function () {
+                console.log("Error");
+            }
+        });
+
+    }
+    setTimeout(stickieStart, 500);
+
+</script>
