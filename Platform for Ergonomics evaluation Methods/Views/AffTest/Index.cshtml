@@ -65,6 +65,7 @@
     </label>
     <input class="slider" type="range" id="loadSlider" min="10" max="1000" value="100" step="10">
 </div>
+<button id="downloadCsvBtn">Download CSV</button>
 
 
 <script type="text/javascript">
@@ -181,6 +182,44 @@
             
         });
     }
+
+    document.getElementById("downloadCsvBtn").addEventListener("click", function () {
+        if (!charts || charts.length === 0) {
+            alert("No data available to download.");
+            return;
+        }
+
+        let csvContent = "Time (s),";
+
+        // Retrieve dataset labels dynamically
+        let datasetLabels = charts[0].data.datasets.map(dataset => dataset.label);
+        csvContent += datasetLabels.join(",") + "\n";
+
+        let timeLabels = charts[0].data.labels; // X-axis time values
+        let datasets = charts[0].data.datasets; // Array of datasets
+
+        // Iterate over time points
+        for (let i = 0; i < timeLabels.length; i++) {
+            let time = timeLabels[i];
+            let row = [time]; // Start with the time value
+
+            // Extract each dataset value at this time index
+            datasets.forEach(dataset => {
+                row.push(dataset.data[i]);
+            });
+
+            csvContent += row.join(",") + "\n";
+        }
+
+        // Create a Blob with the CSV data
+        let blob = new Blob([csvContent], { type: 'text/csv' });
+        let link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = "force_data.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
 
     refresh();
 
