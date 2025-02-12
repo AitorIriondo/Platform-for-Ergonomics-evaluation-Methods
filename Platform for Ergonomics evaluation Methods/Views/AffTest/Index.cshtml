@@ -184,27 +184,36 @@
     }
 
     document.getElementById("downloadCsvBtn").addEventListener("click", function () {
-        if (!charts || charts.length === 0) {
+        if (!charts || charts.length < 2) {
             alert("No data available to download.");
             return;
         }
 
-        let csvContent = "Time (s),";
+        let csvContent = "Time (s),"; // Start with time column
 
-        // Retrieve dataset labels dynamically
-        let datasetLabels = charts[0].data.datasets.map(dataset => dataset.label);
-        csvContent += datasetLabels.join(",") + "\n";
+        // Retrieve dataset labels dynamically for both charts
+        let leftLabels = charts[0].data.datasets.map(dataset => "Left " + dataset.label);
+        let rightLabels = charts[1].data.datasets.map(dataset => "Right " + dataset.label);
+
+        // Combine headers: Time column + Left Arm labels + Right Arm labels
+        csvContent += [...leftLabels, ...rightLabels].join(",") + "\n";
 
         let timeLabels = charts[0].data.labels; // X-axis time values
-        let datasets = charts[0].data.datasets; // Array of datasets
+        let leftDatasets = charts[0].data.datasets; // Left Arm datasets
+        let rightDatasets = charts[1].data.datasets; // Right Arm datasets
 
         // Iterate over time points
         for (let i = 0; i < timeLabels.length; i++) {
             let time = timeLabels[i];
             let row = [time]; // Start with the time value
 
-            // Extract each dataset value at this time index
-            datasets.forEach(dataset => {
+            // Extract each dataset value for Left Arm at this time index
+            leftDatasets.forEach(dataset => {
+                row.push(dataset.data[i]);
+            });
+
+            // Extract each dataset value for Right Arm at this time index
+            rightDatasets.forEach(dataset => {
                 row.push(dataset.data[i]);
             });
 
@@ -220,6 +229,7 @@
         link.click();
         document.body.removeChild(link);
     });
+
 
     refresh();
 
