@@ -98,14 +98,8 @@ local function initFamily(ipsFamily)
   family.update = function()
     for i=1, #ctrlPts do
       addVector3d(family.controlPoints[i].targets, getPosition(ctrlPts[i]:getTarget()))
-	  cf = ctrlPts[i]:getResultantContactForce()
-	  if not cf then 
-		cf = {0,0,0}
-	  ct = ctrlPts[i]:getResultantContactTorque()
-	  if not ct then 
-		ct = {0,0,0}
-      addVector3d(family.controlPoints[i].contactForces, cf)
-      addVector3d(family.controlPoints[i].contactTorques, ct)
+      addVector3d(family.controlPoints[i].contactForces, ctrlPts[i]:getResultantContactForce())
+      addVector3d(family.controlPoints[i].contactTorques, ctrlPts[i]:getResultantContactTorque())
     end
     for i=1, #family.manikins do
       family.manikins[i].update()
