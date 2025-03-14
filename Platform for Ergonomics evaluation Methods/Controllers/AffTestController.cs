@@ -86,7 +86,7 @@ namespace PEM.Controllers
 
 
         [HttpGet]
-        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100)
+        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "")
         {
             System.GC.Collect();
             Debug.WriteLine("GC.Collect GetGraphValArrs");
@@ -114,6 +114,10 @@ namespace PEM.Controllers
                     manikin.SetTime(t);
                     Aff aff = new Aff();
                     aff.input = GetAffInput(manikin, messages);
+                    if (altGender != "")
+                    {
+                        aff.input.female = altGender.ToUpper() != "MALE";
+                    }
                     aff.input.percentCapable = percentCapable;
                     aff.input.left.actualLoad *= demoLoadPercent / 100;
                     aff.input.right.actualLoad *= demoLoadPercent / 100;

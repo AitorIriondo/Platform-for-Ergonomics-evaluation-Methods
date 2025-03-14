@@ -53,9 +53,18 @@
 </style>
 <div id="messagePanel"></div>
 <div id="graphMain">No valid manikin loaded</div>
+<button onclick="fitScale()">Fit scale</button>
+<div>
+    <div class="slider-container">
+        <select id="genderSelect">
+            <option>Female</option>
+            <option>Male</option>
+        </select>
+    </div>
+</div>
 <div class="slider-container">
     <label class="slider-label">
-        MAS percentile: <span id="percentSliderValue" class="slider-value">75</span>
+        Percent capable: <span id="percentSliderValue" class="slider-value">75</span>
     </label>
     <input class="slider" type="range" id="percentSlider" min="1" max="99" value="75">
 </div>
@@ -70,8 +79,17 @@
 
 <script type="text/javascript">
     var charts = null;
+    var maxForce = 0;
     function populateGraphs(graphData) {
         const vals = graphData.vals;
+        for (var i = 0; i < 2; i++) {
+            for (var j = 0; j < 2; j++) {
+                maxForce = Math.max(maxForce, vals[j + i * graphData.labels.length].reduce((a, b) => Math.max(a, b), -Infinity));
+            }
+        }
+        console.log(maxForce);
+        maxY = Math.ceil(maxForce/50)*50;
+        console.log(maxForce,maxY);
         if (charts) {
             for (var i = 0; i < 2; i++) {
                 for (var j = 0; j < graphData.labels.length; j++) {
@@ -115,7 +133,9 @@
                             title: {
                                 display: true,
                                 text: "Force (N)",
-                            }
+                            },
+                            beginAtZero: true,
+                            max: maxY
                         },
                         percent: {
                             title: {
@@ -147,6 +167,10 @@
             }));
         }
     }
+    function fitScale(){
+        charts = null;
+        refresh();
+    }
     const percentSlider = document.getElementById('percentSlider');
     percentSlider.valLabel = document.getElementById('percentSliderValue');
     percentSlider.addEventListener('input', function () {
@@ -160,14 +184,16 @@
         this.valLabel.textContent = this.value + "%";
         refresh();
     });
-
+    const genderSelect = document.getElementById('genderSelect');
+    genderSelect.onchange=function(){refresh();}
     function refresh() {
         $.ajax({
             url: '@Url.Action("GetGraphValArrs", "AffTest")',
             method: 'GET',
             data: { 
                 percentCapable: percentSlider.value,
-                demoLoadPercent: loadSlider.value
+                demoLoadPercent: loadSlider.value,
+                altGender:genderSelect.value
             },
             success: function (response) {
                 //console.log(response);
