@@ -19,17 +19,22 @@
         margin-top: 100px;
         margin-bottom: 100px;
         position: relative;
+        white-space: nowrap;
     }
 
-    #graphMain > * {
+    .chartContainer {
         display: inline-block;
         border: 3px solid whitesmoke;
         width: 45%;
         padding: 10px;
+        position:relative;
  
     }
-    #graphMain > *:last-child{
-        float: right;
+    .chartContainer:last-child{
+        xfloat: right;
+    }
+    #btnFitScale{
+        margin: 20px;
     }
     .slider-container {
         text-align: center;
@@ -50,10 +55,37 @@
     .slider{
         width: 500px;
     }
+    #debugPanel{
+        position: fixed;
+        width:20vw;
+        height:100vh;
+        top:0px;
+        right:0px;
+        background-color:lavender;
+        overflow-y: scroll;
+    }
+    .timeBar{
+        position: absolute;
+        left: calc(65px + 77%);
+        top:25%;
+        height: 55%;
+        width: 2px;
+        opacity:.5;
+        background-color: blue;
+
+    }
 </style>
+<div id="debugPanel"></div>
 <div id="messagePanel"></div>
 <div id="graphMain">No valid manikin loaded</div>
-<button onclick="fitScale()">Fit scale</button>
+<button onclick="fitScale()" id="btnFitScale">Fit scale</button>
+<div class="slider-container">
+    <label class="slider-label">
+        Time: <span id="timeSliderValue" class="slider-value">0</span>
+    </label>
+    <input class="slider" type="range" id="timeSlider" min="0" max="0" value="0">
+</div>
+
 <div>
     <div class="slider-container">
         <select id="genderSelect">
@@ -79,18 +111,22 @@
 
 <script type="text/javascript">
     var charts = null;
-    var maxForce = 0;
+    var chartMaxY = 0;
+    var btnFitScale=document.getElementById('btnFitScale');
+    var curData;
+
     function populateGraphs(graphData) {
+        curData=graphData;
+        var maxForce = 0;
         const vals = graphData.vals;
         for (var i = 0; i < 2; i++) {
             for (var j = 0; j < 2; j++) {
                 maxForce = Math.max(maxForce, vals[j + i * graphData.labels.length].reduce((a, b) => Math.max(a, b), -Infinity));
             }
         }
-        console.log(maxForce);
-        maxY = Math.ceil(maxForce/50)*50;
-        console.log(maxForce,maxY);
+        var maxY = Math.ceil(maxForce/50)*50;
         if (charts) {
+            btnFitScale.disabled = maxY == chartMaxY;
             for (var i = 0; i < 2; i++) {
                 for (var j = 0; j < graphData.labels.length; j++) {
                     charts[i].data.datasets[j].data = vals[j + i * graphData.labels.length];
@@ -100,14 +136,21 @@
             }
             return;
         }
+        chartMaxY = maxY;
+        btnFitScale.disabled = true;
         charts = [];
         var mainContainer = document.getElementById("graphMain");
         mainContainer.innerHTML = "";
-
+        var divLeft = mainContainer.appendChild(document.createElement("div"));
+        mainContainer.appendChild(btnFitScale);
+        var divRight = mainContainer.appendChild(document.createElement("div"));
         for (var i = 0; i < 2; i++) {
-            var div = mainContainer.appendChild(document.createElement("div"));
+            var div = [divLeft, divRight][i];
+            div.className="chartContainer";
             div.appendChild(document.createElement("h3")).textContent = ["Left Arm", "Right Arm"][i];
             var canvas = div.appendChild(document.createElement("canvas"));
+            var timeBar=div.appendChild(document.createElement("div"));
+            timeBar.className="timeBar";
             canvas.id = "chart" + i;
             var labelItr = 0;
             var datasets = [];
@@ -166,11 +209,26 @@
                 }
             }));
         }
+        timeSlider.max = curData.timestamps.length-1;
     }
     function fitScale(){
         charts = null;
         refresh();
     }
+    function refreshTime(){
+        var idx = timeSlider.value;
+        document.querySelectorAll('.timeBar').forEach(timeBar=>{
+            timeBar.style.left="calc(65px + "+(77*idx/timeSlider.max)+"%)";
+        });
+        document.getElementById("debugPanel").innerHTML = "<pre>"+curData.affJsons[idx]+"</pre>";
+    }
+    const timeSlider = document.getElementById('timeSlider');
+    timeSlider.valLabel = document.getElementById('timeSliderValue');
+    timeSlider.addEventListener('input', function () {
+        this.valLabel.textContent = (~~(100 * curData.timestamps[this.value])/100) + " s"; //Avoid epsilon artifacts
+        refreshTime();
+    });
+
     const percentSlider = document.getElementById('percentSlider');
     percentSlider.valLabel = document.getElementById('percentSliderValue');
     percentSlider.addEventListener('input', function () {
@@ -196,9 +254,10 @@
                 altGender:genderSelect.value
             },
             success: function (response) {
-                //console.log(response);
+                console.log(response);
                 document.getElementById("messagePanel").innerHTML = response.messages.join("<br>");
                 populateGraphs(response);
+                refreshTime();
                 
             },
             error: function () {

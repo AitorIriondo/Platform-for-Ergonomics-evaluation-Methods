@@ -104,6 +104,7 @@ namespace PEM.Controllers
                 int frame = 0;
                 bool includeProbability = true;
                 List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
+                List<string> affJsons = new List<string>();
                 for (int i = 0; i < vals.Length; i++)
                 {
                     vals[i] = new List<float>();
@@ -132,8 +133,10 @@ namespace PEM.Controllers
                             vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
                         }
                     }
+                    affJsons.Add(JsonConvert.SerializeObject(aff, Formatting.Indented));
                     t = ++frame * .1f;
                 }
+                
                 //Debug.WriteLine(vals[1].Count);
                 List<string> labels = new List<string>(){
                     "Load (N)",
@@ -143,7 +146,7 @@ namespace PEM.Controllers
                 {
                     labels.Add("%Cap for load");
                 }
-                return Json(new { timestamps, vals, labels, messages });
+                return Json(new { timestamps, vals, labels, messages, affJsons });
 
             }
             catch (Exception ex)
