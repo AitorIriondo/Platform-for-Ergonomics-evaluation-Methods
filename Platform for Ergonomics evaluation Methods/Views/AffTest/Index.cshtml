@@ -17,7 +17,7 @@
 
     #graphMain {
         margin-top: 100px;
-        margin-bottom: 100px;
+        margin-bottom: 10px;
         position: relative;
         white-space: nowrap;
     }
@@ -36,24 +36,42 @@
     #btnFitScale{
         margin: 20px;
     }
+    #AFFInputs{
+        background-color: #EEE;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    #AFFInputs .caption{
+        text-align: right;
+        width: 300px;
+
+    }
     .slider-container {
         text-align: center;
         font-family: Arial, sans-serif;
         margin: 20px;
     }
-
-    .slider-label {
-        margin-bottom: 10px;
-        font-size: 18px;
-        display: block;
+    .inputContainer {
+        text-align: left;
+        font-family: Arial, sans-serif;
+        margin: 10px;
+    }
+    .inputContainer > *{
+        display: inline-block;
+    }
+    .sliderContainer > .caption, .sliderValue{
+        position: relative;
+        top: -2px;
     }
 
-    .slider-value {
-        font-weight: bold;
-        color: #007BFF;
+
+    .sliderContainer > .sliderValue{
+        text-align: left;
+        width: 80px;
     }
+
     .slider{
-        width: 500px;
+        width: 300px;
     }
     #debugPanel{
         position: fixed;
@@ -74,6 +92,9 @@
         background-color: blue;
 
     }
+    #templatesContainer{
+        display: none;
+    }
 </style>
 <div id="debugPanel"></div>
 <div id="messagePanel"></div>
@@ -86,25 +107,22 @@
     <input class="slider" type="range" id="timeSlider" min="0" max="0" value="0">
 </div>
 
-<div>
-    <div class="slider-container">
+<div id="AFFInputs">
+    <div class="selectContainer inputContainer">
+        <div class="caption">Gender</div>
         <select id="genderSelect">
             <option>Female</option>
             <option>Male</option>
         </select>
     </div>
 </div>
-<div class="slider-container">
-    <label class="slider-label">
-        Percent capable: <span id="percentSliderValue" class="slider-value">75</span>
-    </label>
-    <input class="slider" type="range" id="percentSlider" min="1" max="99" value="75">
-</div>
-<div class="slider-container">
-    <label class="slider-label">
-        Load Multiplier (demo): <span id="loadSliderValue" class="slider-value">100%</span>
-    </label>
-    <input class="slider" type="range" id="loadSlider" min="10" max="1000" value="100" step="10">
+
+<div id="templatesContainer">
+    <div class="sliderContainer inputContainer">
+        <div class="caption">Slider template</div>
+        <input class="slider" type="range" id="" min="1" max="99" value="75">
+        <div class="sliderValue">88</div>
+    </div>
 </div>
 <button id="downloadCsvBtn">Download CSV</button>
 
@@ -220,7 +238,10 @@
         document.querySelectorAll('.timeBar').forEach(timeBar=>{
             timeBar.style.left="calc(65px + "+(77*idx/timeSlider.max)+"%)";
         });
-        document.getElementById("debugPanel").innerHTML = "<pre>"+curData.affJsons[idx]+"</pre>";
+        console.log(curData.affJsons[idx]);
+        var aff = JSON.parse(curData.affJsons[idx]);
+
+        document.getElementById("debugPanel").innerHTML = "<pre>"+JSON.stringify(aff,null,4)+"</pre>";
     }
     const timeSlider = document.getElementById('timeSlider');
     timeSlider.valLabel = document.getElementById('timeSliderValue');
@@ -229,21 +250,44 @@
         refreshTime();
     });
 
-    const percentSlider = document.getElementById('percentSlider');
-    percentSlider.valLabel = document.getElementById('percentSliderValue');
-    percentSlider.addEventListener('input', function () {
-        this.valLabel.textContent = this.value + "";
-        refresh();
-    });
-
-    const loadSlider = document.getElementById('loadSlider');
-    loadSlider.valLabel = document.getElementById('loadSliderValue');
-    loadSlider.addEventListener('input', function () {
-        this.valLabel.textContent = this.value + "%";
-        refresh();
-    });
     const genderSelect = document.getElementById('genderSelect');
     genderSelect.onchange=function(){refresh();}
+    function createNumberField(id, caption, val){
+        var container=document.createElement();
+    }
+    function createSlider(parent, caption, val, minVal, maxVal, getValText, onInput){
+        var template = document.getElementById("templatesContainer").querySelector(".sliderContainer");
+        var elm = template.cloneNode(true);
+        elm.querySelector(".caption").innerHTML=caption;
+        var slider = elm.querySelector(".slider");
+        slider.min=minVal;
+        slider.max=maxVal;
+        slider.value=val;
+        var valText = elm.querySelector(".sliderValue");
+        valText.innerHTML = getValText(slider.value);        
+        slider.addEventListener('input', function () {
+            valText.innerHTML = getValText(slider.value);
+            onInput();
+        });
+        parent.appendChild(elm);
+        return slider;
+    }
+    var AFFInputs=document.getElementById("AFFInputs");
+    const percentSlider = createSlider(AFFInputs, "Percent capable", 75, 1, 100, (val)=>{
+        return val+"%"; 
+    },refresh);
+    const freqEffortsPerDaySlider = createSlider(AFFInputs, "Frequency of Efforts per Day", 420, 1, 500, (val)=>{
+        return val; 
+    },refresh);
+    const effDurPerEffort = createSlider(AFFInputs, "Effective Duration per Effort", 1, 1, 60, (val)=>{
+        return val+" sec"; 
+    },refresh);
+
+    const loadSlider = createSlider(AFFInputs, "Load multiplier (demo)", 100, 10, 1000, (val)=>{
+        return val+"%"; 
+    },refresh);
+    loadSlider.step=10;
+
     function refresh() {
         $.ajax({
             url: '@Url.Action("GetGraphValArrs", "AffTest")',
