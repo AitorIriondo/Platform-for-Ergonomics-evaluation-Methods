@@ -100,11 +100,9 @@
 <div id="messagePanel"></div>
 <div id="graphMain">No valid manikin loaded</div>
 <button onclick="fitScale()" id="btnFitScale">Fit scale</button>
-<div class="slider-container">
-    <label class="slider-label">
-        Time: <span id="timeSliderValue" class="slider-value">0</span>
-    </label>
-    <input class="slider" type="range" id="timeSlider" min="0" max="0" value="0">
+<div id="commonControls">
+    <button onclick="refresh()">Manual refresh</button>
+
 </div>
 
 <div id="AFFInputs">
@@ -243,12 +241,6 @@
 
         document.getElementById("debugPanel").innerHTML = "<pre>"+JSON.stringify(aff,null,4)+"</pre>";
     }
-    const timeSlider = document.getElementById('timeSlider');
-    timeSlider.valLabel = document.getElementById('timeSliderValue');
-    timeSlider.addEventListener('input', function () {
-        this.valLabel.textContent = (~~(100 * curData.timestamps[this.value])/100) + " s"; //Avoid epsilon artifacts
-        refreshTime();
-    });
 
     const genderSelect = document.getElementById('genderSelect');
     genderSelect.onchange=function(){refresh();}
@@ -272,6 +264,19 @@
         parent.appendChild(elm);
         return slider;
     }
+    var commonControls = document.getElementById("commonControls");
+    const timeSlider = createSlider(commonControls, "Time", 0, 0, 1, (val)=>{
+        if(!curData){
+            return "0 s";
+        }
+        return (~~(100 * curData.timestamps[val])/100) + " s"; //Avoid epsilon artifacts; 
+    },refreshTime);
+    // timeSlider.valLabel = document.getElementById('timeSliderValue');
+    // timeSlider.addEventListener('input', function () {
+    //     this.valLabel.textContent = (~~(100 * curData.timestamps[this.value])/100) + " s"; //Avoid epsilon artifacts
+    //     refreshTime();
+    // });
+
     var AFFInputs=document.getElementById("AFFInputs");
     const percentSlider = createSlider(AFFInputs, "Percent capable", 75, 1, 100, (val)=>{
         return val+"%"; 
@@ -279,7 +284,7 @@
     const freqEffortsPerDaySlider = createSlider(AFFInputs, "Frequency of Efforts per Day", 420, 1, 500, (val)=>{
         return val; 
     },refresh);
-    const effDurPerEffort = createSlider(AFFInputs, "Effective Duration per Effort", 1, 1, 60, (val)=>{
+    const effDurPerEffortSlider = createSlider(AFFInputs, "Effective Duration per Effort", 1, 1, 60, (val)=>{
         return val+" sec"; 
     },refresh);
 
@@ -295,7 +300,11 @@
             data: { 
                 percentCapable: percentSlider.value,
                 demoLoadPercent: loadSlider.value,
-                altGender:genderSelect.value
+                altGender:genderSelect.value,
+                mafParamsJson:JSON.stringify({
+                    freqEffortsPerDay:[freqEffortsPerDaySlider.value, freqEffortsPerDaySlider.value],
+                    effDurPerEffortSec:[effDurPerEffortSlider.value, effDurPerEffortSlider.value]
+                }),
             },
             success: function (response) {
                 console.log(response);

@@ -85,25 +85,19 @@ namespace PEM.Controllers
 
         }
 
+        [System.Serializable]
+        class MafParams {
+            public float[] freqEffortsPerDay = { 0, 0 };
+            public float[] effDurPerEffortSec = { 0, 0 };
+
+        }
 
         [HttpGet]
-        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "")
+        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "", string mafParamsJson = "")
         {
             System.GC.Collect();
             Debug.WriteLine("GC.Collect GetGraphValArrs");
-            float[] freqEffortsPerDay = { 420, 100 };
-            float[] effDurPerEffort = { 1, 1 };
-            float[] mae = new float[2];
-            for(int i = 0; i < 2; i++)
-            {
-                float dutyCycle = (freqEffortsPerDay[i] * effDurPerEffort[i]) / 25200;
-                mae[i] = 1;
-                if (freqEffortsPerDay[i] * effDurPerEffort[i] >= 1)
-                {
-                    mae[i] = 1 - MathF.Pow(dutyCycle - 1 / 25200, .24f);
-                }
-
-            }
+            MafParams? mafParams = JsonConvert.DeserializeObject<MafParams>(mafParamsJson);
             try
             {
                 ManikinBase? manikin = ManikinManager.loadedManikin;
@@ -112,6 +106,7 @@ namespace PEM.Controllers
                     return BadRequest();
                 }
                 List<string> messages = new List<string>();
+                messages.Add("maxAcceptableForce = masWithGravity * maxAcceptableEffort;");
                 List<float> timestamps = new List<float>();
                 float t = 0;
                 int frame = 0;
@@ -132,19 +127,16 @@ namespace PEM.Controllers
                     {
                         aff.input.female = altGender.ToUpper() != "MALE";
                     }
+                    if(mafParams != null) {
+                        for(int i = 0; i < 2; i++) {
+                            (i == 0 ? aff.input.left : aff.input.right).freqEffortsPerDay = mafParams.freqEffortsPerDay[i];
+                            (i == 0 ? aff.input.left : aff.input.right).effDurPerEffortSec = mafParams.effDurPerEffortSec[i];
+                        }
+                    }
                     aff.input.percentCapable = percentCapable;
                     aff.input.left.actualLoad *= demoLoadPercent / 100;
                     aff.input.right.actualLoad *= demoLoadPercent / 100;
                     aff.Calculate();
-                    /*
-                    D32 Effort = 'Lft - ANN 13 nodes'!T84
-                        T84=IF('Input Data'!D4="Female";'Lft - ANN 13 nodes'!T82;'Lft - ANN 13 nodes'!W82)
-                            T82=IF(T81<S82;0;T81)
-                                T81=('Input Data'!D25 - 'Lft - ANN 13 nodes'!Q61)/'Lft - ANN 13 nodes'!T64  
-                                    
-                                S82=0
-                            W82=IF(W81<S82;0;W81)
-                    */
                     int arrIdx = 0;
                     float[] maf = new float[2];
                     for (int i = 0; i < 2; i++)
@@ -156,12 +148,9 @@ namespace PEM.Controllers
                         {
                             vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
                         }
-                        maf[i] = mas * mae[i]; 
                     }
                     CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                     string json = JsonConvert.SerializeObject(aff, Formatting.Indented);
-                    string extra = "\"mae\":[" + String.Join(",", mae) + "], \"maf\":[" + String.Join(",", maf) + "]";
-                    json = json.Insert(json.Length - 2, "," + extra);
                     affJsons.Add(json);
                     t = ++frame * .1f;
                 }

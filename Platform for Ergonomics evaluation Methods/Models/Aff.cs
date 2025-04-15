@@ -62,6 +62,9 @@ public class Aff {
         public Vector3 shoulder;
         public Vector3 forceDirection; //unit vector for force applied at the knuckle(not the reaction force)
         public float actualLoad;
+        public float freqEffortsPerDay = -1;
+        public float effDurPerEffortSec = -1;
+
     }
 
     [System.Serializable]
@@ -100,6 +103,13 @@ public class Aff {
         public float masWithGravity;
         public float actualLoadNoGravity;
         public float masProbabilityPercent;
+        public float effortDutyCycle = -1;
+        public float effortRelativeToMas = -1;
+        public float maxAcceptableEffort = -1;
+        public float maxAcceptableForce = -1;
+        public float percentCapableWithMaf = -1;
+        public float subacromialImpingeScaleFactor = -1;
+        public float mafWithSf = -1;
         public readonly bool isLeft;
         [NonSerialized]
         Aff aff;
@@ -157,6 +167,19 @@ public class Aff {
             /*Percentage capable of the actual loads*/
             actualLoadNoGravity = input.actualLoad - gravityAssist;
             masProbabilityPercent = (1 - MatlabFuncs.Normcdf(actualLoadNoGravity, mas, sd)) * 100;
+
+            /*MAF stuff */
+            if(input.freqEffortsPerDay > 0 && input.effDurPerEffortSec > 0) {
+                effortDutyCycle= input.freqEffortsPerDay * input.effDurPerEffortSec / 25200f;
+                maxAcceptableEffort = 1;
+                if (input.freqEffortsPerDay * input.effDurPerEffortSec >= 1) {
+                    maxAcceptableEffort = 1 - MathF.Pow(effortDutyCycle - 1 / 25200, .24f);
+                }
+                //Faktorerna är oklara
+                //Kolla om den första är mas eller masWithGravity
+                //Den andra ska vara effortRelativeToMas, men vi vet inte hur den beräknas
+                maxAcceptableForce = masWithGravity * maxAcceptableEffort;
+            }
 
         }
         void CalculateGravityForceEffect() {
