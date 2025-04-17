@@ -4,6 +4,7 @@ using PEM.Services;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using static Aff;
 
 namespace PEM.Controllers
 {
@@ -92,14 +93,44 @@ namespace PEM.Controllers
 
         }
 
+        [System.Serializable]
+        class AdditionalForce {
+            public float[] dir = { 0, 0, 0};
+            public float force = 0;
+            public float startTime = 0;
+            public float duration = 0;
+            bool testAt2s = false;
+            public bool containsTime(float t) {
+                return t >= startTime && duration > 0 && t <= startTime + duration;
+            }
+            public Vector3 getDirAtTime(float t) {
+                if (testAt2s) {
+                    return new Vector3(-.60f, .53f, .60f);
+                }
+                if (containsTime(t)) {
+                    return new Vector3(dir[0], dir[1], dir[2]).Normalized();
+                }
+                return Vector3.Zero;
+            }
+            public float getForceAtTime(float t) {
+                if (testAt2s) {
+                    return 19;
+                }
+                if (containsTime(t)) {
+                    return force;
+                }
+                return 0;
+            }
+        }
+
         [HttpGet]
-        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "", string mafParamsJson = "")
+        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "", string mafParamsJson = "", string additionalForceJson = "")
         {
             System.GC.Collect();
             Debug.WriteLine("GC.Collect GetGraphValArrs");
             MafParams? mafParams = JsonConvert.DeserializeObject<MafParams>(mafParamsJson);
-            try
-            {
+            AdditionalForce? additionalForce = JsonConvert.DeserializeObject<AdditionalForce>(additionalForceJson);
+            try {
                 ManikinBase? manikin = ManikinManager.loadedManikin;
                 if (manikin == null)
                 {
@@ -124,6 +155,22 @@ namespace PEM.Controllers
                     manikin.SetTime(t);
                     Aff aff = new Aff();
                     aff.input = GetAffInput(manikin, messages);
+                    string extraJson = ", \"extra\":{\"additionalForceJson\":" + additionalForceJson;
+                    if (additionalForce != null && additionalForce.containsTime(t)) {
+                        extraJson += $", \"left.orgForceDir\":{JsonConvert.SerializeObject(aff.input.left.forceDirection)},";
+                        extraJson += $"\"left.orgActualLoad\":{JsonConvert.SerializeObject(aff.input.left.actualLoad)},";
+                        Vector3 orgForceVector = aff.input.left.forceDirection * aff.input.left.actualLoad;
+                        Vector3 addForceVector = additionalForce.getDirAtTime(t) * additionalForce.getForceAtTime(t);
+                        Vector3 newForceVector = orgForceVector + addForceVector;
+                        extraJson += $"\"left.addDirNormalized\":{JsonConvert.SerializeObject(additionalForce.getDirAtTime(t).Normalized())},";
+                        extraJson += $"\"left.addForceVector\":{JsonConvert.SerializeObject(addForceVector)},";
+                        extraJson += $"\"left.newForceVector\":{JsonConvert.SerializeObject(newForceVector)},";
+
+                        aff.input.left.forceDirection = newForceVector.Normalized();
+                        aff.input.left.actualLoad = newForceVector.Length();
+                        extraJson += $"\"left.newForceDir\":{JsonConvert.SerializeObject(aff.input.left.forceDirection)},";
+                        extraJson += $"\"left.newActualLoad\":{JsonConvert.SerializeObject(aff.input.left.actualLoad)}";
+                    }
                     if (altGender != "")
                     {
                         aff.input.female = altGender.ToUpper() != "MALE";
@@ -151,8 +198,9 @@ namespace PEM.Controllers
                     }
                     CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                     string json = JsonConvert.SerializeObject(aff, Formatting.Indented);
+                    json = json.Insert(json.Length - 2,extraJson+"}");
                     affJsons.Add(json);
-                    t = ++frame * .1f;
+                    t = ++frame * .01f;
                 }
                 
                 //Debug.WriteLine(vals[1].Count);
