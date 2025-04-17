@@ -111,6 +111,7 @@ namespace PEM.Controllers
                 float t = 0;
                 int frame = 0;
                 bool includeProbability = true;
+                bool useMaf = true;
                 List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
                 List<string> affJsons = new List<string>();
                 for (int i = 0; i < vals.Length; i++)
@@ -138,15 +139,14 @@ namespace PEM.Controllers
                     aff.input.right.actualLoad *= demoLoadPercent / 100;
                     aff.Calculate();
                     int arrIdx = 0;
-                    float[] maf = new float[2];
                     for (int i = 0; i < 2; i++)
                     {
                         vals[arrIdx++].Add((i == 0 ? aff.input.left : aff.input.right).actualLoad);
-                        float mas = (i == 0 ? aff.leftArm : aff.rightArm).masWithGravity;
-                        vals[arrIdx++].Add(mas);
+                        var arm = i == 0 ? aff.leftArm : aff.rightArm;
+                        vals[arrIdx++].Add(useMaf ? arm.maxAcceptableForce : arm.masWithGravity);
                         if (includeProbability)
                         {
-                            vals[arrIdx++].Add((i == 0 ? aff.leftArm : aff.rightArm).masProbabilityPercent);
+                            vals[arrIdx++].Add(arm.masProbabilityPercent);
                         }
                     }
                     CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -157,8 +157,8 @@ namespace PEM.Controllers
                 
                 //Debug.WriteLine(vals[1].Count);
                 List<string> labels = new List<string>(){
-                    "Load (N)",
-                    $"MAS for {percentCapable}% cap (N)",
+                    "Demand (N)",
+                    useMaf ? $"MAF for {percentCapable}% cap (N)" : $"MAS for {percentCapable}% cap (N)",
                 };
                 if (includeProbability)
                 {

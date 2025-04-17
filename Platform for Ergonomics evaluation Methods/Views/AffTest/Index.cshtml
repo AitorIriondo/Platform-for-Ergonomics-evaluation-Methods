@@ -101,7 +101,6 @@
 <div id="graphMain">No valid manikin loaded</div>
 <button onclick="fitScale()" id="btnFitScale">Fit scale</button>
 <div id="commonControls">
-    <button onclick="refresh()">Manual refresh</button>
 
 </div>
 
@@ -271,11 +270,6 @@
         }
         return (~~(100 * curData.timestamps[val])/100) + " s"; //Avoid epsilon artifacts; 
     },refreshTime);
-    // timeSlider.valLabel = document.getElementById('timeSliderValue');
-    // timeSlider.addEventListener('input', function () {
-    //     this.valLabel.textContent = (~~(100 * curData.timestamps[this.value])/100) + " s"; //Avoid epsilon artifacts
-    //     refreshTime();
-    // });
 
     var AFFInputs=document.getElementById("AFFInputs");
     const percentSlider = createSlider(AFFInputs, "Percent capable", 75, 1, 100, (val)=>{
@@ -293,7 +287,25 @@
     },refresh);
     loadSlider.step=10;
 
-    function refresh() {
+    //Prevent unnecessary high refresh rate (causes ugly graphs)
+    var refresher=null;
+    var pendingRefreshRequest=false;
+    function refresh(){
+        pendingRefreshRequest = true;
+        if(refresher){
+            return;
+        }
+        _refresh();
+        refresher = setInterval(()=>{
+            if(!pendingRefreshRequest){
+                clearInterval(refresher);
+                refresher=null;
+            }
+            pendingRefreshRequest=false;
+            _refresh();
+        }, 100);
+    }
+    function _refresh() {
         $.ajax({
             url: '@Url.Action("GetGraphValArrs", "AffTest")',
             method: 'GET',
