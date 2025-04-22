@@ -154,7 +154,7 @@ var AFFInputs = document.getElementById("AFFInputs");
 const percentSlider = createSlider(AFFInputs, "Percent capable", 75, 1, 100, (val) => {
     return val + "%";
 }, refresh);
-const freqEffortsPerDaySlider = createSlider(AFFInputs, "Frequency (Efforts per Day)", 420, 1, 500, (val) => {
+const freqEffortsPerDaySlider = createSlider(AFFInputs, "Frequency (Efforts per Day)", 1, 1, 500, (val) => {
     return val;
 }, refresh);
 const effDurPerEffortSlider = createSlider(AFFInputs, "Effective Duration per Effort", 1, 1, 60, (val) => {
