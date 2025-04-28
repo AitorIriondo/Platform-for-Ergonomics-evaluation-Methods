@@ -2,37 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Numerics;
+using System.Security.Cryptography;
 
-public class MatlabFuncs {
-    public static double Norminv(double p, double mu, double sigma) {
-        return (float)MathNet.Numerics.Distributions.Normal.InvCDF(mu, sigma, p);
-    }
-    public static float Normcdf(float x, float mu, float sigma) {
-        return (float)MathNet.Numerics.Distributions.Normal.CDF(mu, sigma, x);
-    }
-    public static Vector3[] transpose(Vector3[] m) {
-        return new Vector3[] {
-            new Vector3(m[0].X,m[1].X,m[2].X),
-            new Vector3(m[0].Y,m[1].Y,m[2].Y),
-            new Vector3(m[0].Z,m[1].Z,m[2].Z),
-        };
-        //return new Vector3[] {
-        //    new Vector3(m[0][0],m[1][0],m[2][0]),
-        //    new Vector3(m[0][1],m[1][1],m[2][1]),
-        //    new Vector3(m[0][2],m[1][2],m[2][2]),
-        //};
-    }
-    public static Vector3 mtimes(Vector3 v, Vector3[] m) {
-        return m[0] * v.X + m[1] * v.Y + m[2] * v.Z;
-        //Vector3 ret = Vector3.zero;
-        //for (int i = 0; i < 3; i++) {
-        //    ret += m[i] * v[i];
-        //}
-        //return ret;
-    }
-
-}
-namespace Aff1 {
+namespace Aff2 {
     [System.Serializable]
     public class Aff {
         [System.Serializable]
@@ -104,8 +76,15 @@ namespace Aff1 {
             public float actualLoadNoGravity;
             public float masProbabilityPercent;
 
+            public float effortDutyCycle = -1;
+            public float effortRelativeToMas = -1;
+            public float maxAcceptableEffort = -1;
             public float mafNoGravity = -1;
-
+            public float percentMvc = -1;
+            public float percentMaf = -1;
+            //public float percentCapableWithMaf = -1;
+            //public float subacromialImpingeScaleFactor = -1;
+            //public float mafWithSf = -1;
             public readonly bool isLeft;
             [NonSerialized]
             Aff aff;
@@ -164,18 +143,27 @@ namespace Aff1 {
                 actualLoadNoGravity = input.actualLoad - gravityAssist;
                 masProbabilityPercent = (1 - MatlabFuncs.Normcdf(actualLoadNoGravity, mas, sd)) * 100;
 
-                /*MAF stuff se Aff2*/
-                //if (input.freqEffortsPerDay > 0 && input.effDurPerEffortSec > 0) {
-                //    effortDutyCycle = input.freqEffortsPerDay * input.effDurPerEffortSec / 25200f;
-                //    maxAcceptableEffort = 1;
-                //    if (input.freqEffortsPerDay * input.effDurPerEffortSec >= 1) {
-                //        maxAcceptableEffort = 1 - MathF.Pow(effortDutyCycle - 1 / 25200, .24f);
-                //    }
-                //    //Faktorerna är oklara
-                //    //Kolla om den första är mas eller masWithGravity
-                //    //Den andra ska vara effortRelativeToMas, men vi vet inte hur den beräknas
-                //    maxAcceptableForce = masWithGravity * maxAcceptableEffort;
-                //}
+                /*MAF stuff */
+                if (input.freqEffortsPerDay > 0 && input.effDurPerEffortSec > 0) {
+                    effortDutyCycle = input.freqEffortsPerDay * input.effDurPerEffortSec / 25200f;
+                    maxAcceptableEffort = 1;
+                    if (input.freqEffortsPerDay * input.effDurPerEffortSec >= 1) {
+                        maxAcceptableEffort = 1 - MathF.Pow(effortDutyCycle - 1 / 25200, .24f);
+                    }
+
+                    //% Percent Effort(Peak D / C Ratio)
+                    //    LPercentMVC = (LActualLoad - Lga) / L0gMAS
+                    percentMvc = (input.actualLoad - gravityAssist) / masNoGravity;
+
+                    //% Max Acceptble Force
+                    //    L0gMAF = L0gMAS * MAE
+                    mafNoGravity = masNoGravity * maxAcceptableEffort;
+
+                    //% Percent of MAF(Fatigue D/ C Ratio)    
+                    //    LPercentMAF = (LActualLoad - Lga) / L0gMAF
+                    percentMaf = (input.actualLoad - gravityAssist) / mafNoGravity;
+
+                }
 
             }
             void CalculateGravityForceEffect() {

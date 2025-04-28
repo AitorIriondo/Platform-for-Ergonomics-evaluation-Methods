@@ -4,7 +4,7 @@ using PEM.Services;
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
-using static Aff;
+using Aff2;
 
 namespace PEM.Controllers
 {
@@ -103,12 +103,15 @@ namespace PEM.Controllers
             public bool containsTime(float t) {
                 return t >= startTime && duration > 0 && t <= startTime + duration;
             }
+            public Vector3 dirVector{ get { return new Vector3(dir[0], dir[1], dir[2]); } }
+            public bool isValid { get { return dirVector.Length() > 0; } }
+
             public Vector3 getDirAtTime(float t) {
                 if (testAt2s) {
                     return new Vector3(-.60f, .53f, .60f);
                 }
                 if (containsTime(t)) {
-                    return new Vector3(dir[0], dir[1], dir[2]).Normalized();
+                    return dirVector.Normalized();
                 }
                 return Vector3.Zero;
             }
@@ -124,12 +127,13 @@ namespace PEM.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "", string mafParamsJson = "", string additionalForceJson = "")
+        public IActionResult GetGraphValArrs(float percentCapable = 75, float demoLoadPercent = 100, string altGender = "", string mafParamsJson = "", string additionalForcesJson = "")
         {
             System.GC.Collect();
             Debug.WriteLine("GC.Collect GetGraphValArrs");
+            
             MafParams? mafParams = JsonConvert.DeserializeObject<MafParams>(mafParamsJson);
-            AdditionalForce? additionalForce = JsonConvert.DeserializeObject<AdditionalForce>(additionalForceJson);
+            AdditionalForce[]? additionalForces = JsonConvert.DeserializeObject<AdditionalForce[]>(additionalForcesJson);
             try {
                 ManikinBase? manikin = ManikinManager.loadedManikin;
                 if (manikin == null)
@@ -142,34 +146,43 @@ namespace PEM.Controllers
                 float t = 0;
                 int frame = 0;
                 bool includeProbability = true;
-                bool useMaf = true;
+                bool useMaf = mafParams!=null;
                 List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
                 List<string> affJsons = new List<string>();
                 for (int i = 0; i < vals.Length; i++)
                 {
                     vals[i] = new List<float>();
                 }
+
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 while (t < manikin.GetTimelineDuration())
                 {
                     timestamps.Add(t);
                     manikin.SetTime(t);
                     Aff aff = new Aff();
                     aff.input = GetAffInput(manikin, messages);
-                    string extraJson = ", \"extra\":{\"additionalForceJson\":" + additionalForceJson;
-                    if (additionalForce != null && additionalForce.containsTime(t)) {
-                        extraJson += $", \"left.orgForceDir\":{JsonConvert.SerializeObject(aff.input.left.forceDirection)},";
-                        extraJson += $"\"left.orgActualLoad\":{JsonConvert.SerializeObject(aff.input.left.actualLoad)},";
-                        Vector3 orgForceVector = aff.input.left.forceDirection * aff.input.left.actualLoad;
-                        Vector3 addForceVector = additionalForce.getDirAtTime(t) * additionalForce.getForceAtTime(t);
-                        Vector3 newForceVector = orgForceVector + addForceVector;
-                        extraJson += $"\"left.addDirNormalized\":{JsonConvert.SerializeObject(additionalForce.getDirAtTime(t).Normalized())},";
-                        extraJson += $"\"left.addForceVector\":{JsonConvert.SerializeObject(addForceVector)},";
-                        extraJson += $"\"left.newForceVector\":{JsonConvert.SerializeObject(newForceVector)},";
+                    string extraJson = ", \"extra\":{\"additionalForcesJson\":" + additionalForcesJson;
+                    if (additionalForces != null) {
+                        for (int i = 0; i < additionalForces.Length; i++) {
+                            var additionalForce = additionalForces[i];
+                            string side = i == 0 ? "left" : "right";
+                            var arm = i == 0 ? aff.input.left : aff.input.right;
+                            if (additionalForce.isValid && additionalForce.containsTime(t)) {
+                                extraJson += $", \"{side}.orgForceDir\":{JsonConvert.SerializeObject(arm.forceDirection)},";
+                                extraJson += $"\"{side}.orgActualLoad\":{JsonConvert.SerializeObject(arm.actualLoad)},";
+                                Vector3 orgForceVector = arm.forceDirection * arm.actualLoad;
+                                Vector3 addForceVector = additionalForce.getDirAtTime(t) * additionalForce.getForceAtTime(t);
+                                Vector3 newForceVector = orgForceVector + addForceVector;
+                                extraJson += $"\"{side}.addDirNormalized\":{JsonConvert.SerializeObject(additionalForce.getDirAtTime(t).Normalized())},";
+                                extraJson += $"\"{side}.addForceVector\":{JsonConvert.SerializeObject(addForceVector)},";
+                                extraJson += $"\"{side}.newForceVector\":{JsonConvert.SerializeObject(newForceVector)},";
 
-                        aff.input.left.forceDirection = newForceVector.Normalized();
-                        aff.input.left.actualLoad = newForceVector.Length();
-                        extraJson += $"\"left.newForceDir\":{JsonConvert.SerializeObject(aff.input.left.forceDirection)},";
-                        extraJson += $"\"left.newActualLoad\":{JsonConvert.SerializeObject(aff.input.left.actualLoad)}";
+                                arm.forceDirection = newForceVector.Normalized();
+                                arm.actualLoad = newForceVector.Length();
+                                extraJson += $"\"{side}.newForceDir\":{JsonConvert.SerializeObject(arm.forceDirection)},";
+                                extraJson += $"\"{side}.newActualLoad\":{JsonConvert.SerializeObject(arm.actualLoad)}";
+                            }
+                        }
                     }
                     if (altGender != "")
                     {
@@ -190,19 +203,17 @@ namespace PEM.Controllers
                     {
                         vals[arrIdx++].Add((i == 0 ? aff.input.left : aff.input.right).actualLoad);
                         var arm = i == 0 ? aff.leftArm : aff.rightArm;
-                        vals[arrIdx++].Add(useMaf ? arm.maxAcceptableForce : arm.masWithGravity);
+                        vals[arrIdx++].Add(useMaf ? arm.mafNoGravity : arm.masWithGravity);
                         if (includeProbability)
                         {
                             vals[arrIdx++].Add(arm.masProbabilityPercent);
                         }
                     }
-                    CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                     string json = JsonConvert.SerializeObject(aff, Formatting.Indented);
                     json = json.Insert(json.Length - 2,extraJson+"}");
                     affJsons.Add(json);
-                    t = ++frame * .01f;
+                    t = ++frame * .1f;
                 }
-                
                 //Debug.WriteLine(vals[1].Count);
                 List<string> labels = new List<string>(){
                     "Demand (N)",

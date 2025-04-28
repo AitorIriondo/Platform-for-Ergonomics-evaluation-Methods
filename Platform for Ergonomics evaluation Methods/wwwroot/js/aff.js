@@ -116,7 +116,7 @@ function refreshTime() {
     document.querySelectorAll('.timeBar').forEach(timeBar => {
         timeBar.style.left = "calc(65px + " + (77 * idx / timeSlider.max) + "%)";
     });
-    console.log(curData.affJsons[idx]);
+    //console.log(curData.affJsons[idx]);
     var aff = JSON.parse(curData.affJsons[idx]);
 
     document.getElementById("debugPanel").innerHTML = "<pre>" + JSON.stringify(aff, null, 4) + "</pre>";
@@ -178,7 +178,8 @@ function normalize(vec) {
 
 function ForceInputs() {
     const self = this;
-    const container = document.getElementById("ForceInputs");
+    const container = document.getElementById("ForceInputs").appendChild(document.createElement("div"));
+    container.className = "ForceInputPanel";
     self.dirSliders = [];
     const dirScale = 100;
     function getDirSliderVal(v) {
@@ -194,6 +195,7 @@ function ForceInputs() {
         }
         self.dirSliders.push(slider);
     }
+    self.dirSliders[2].setVal(1);
     function getDirArr() {
         var ret = [];
         self.dirSliders.forEach((slider) => { ret.push(getDirSliderVal(slider.value)); });
@@ -207,7 +209,7 @@ function ForceInputs() {
             self.dirSliders[i].setVal(normdir[i]);
         }
     }
-    self.forceSlider = createSlider(container, "Force", 0, 0, 100, (val) => {
+    self.forceSlider = createSlider(container, "Force", 0, 0, 250, (val) => {
         return val + " N";
     }, refresh);
     self.startSlider = createSlider(container, "Start time", 0, 0, 1, (val) => {
@@ -230,8 +232,15 @@ function ForceInputs() {
         }
     }
 }
-const forceInputs = new ForceInputs();
+const forceInputs = [new ForceInputs(), new ForceInputs()];
 
+function getAdditionalForcesJson() {
+    arr = [];
+    forceInputs.forEach(fi => { arr.push(fi.getJsonable()); })
+    json = JSON.stringify(arr);
+    console.log(json);
+    return json;
+}
 //Prevent unnecessary high refresh rate (causes ugly graphs)
 var refresher = null;
 var pendingRefreshRequest = false;
@@ -262,14 +271,14 @@ function _refresh() {
                 freqEffortsPerDay: [freqEffortsPerDaySlider.value, freqEffortsPerDaySlider.value],
                 effDurPerEffortSec: [effDurPerEffortSlider.value, effDurPerEffortSlider.value]
             }),
-            additionalForceJson:JSON.stringify(forceInputs.getJsonable()),
+            additionalForcesJson: getAdditionalForcesJson(),
         },
         success: function (response) {
-            console.log(response);
+            //console.log(response);
             document.getElementById("messagePanel").innerHTML = response.messages.join("<br>");
             populateGraphs(response);
             refreshTime();
-            forceInputs.update();
+            forceInputs.forEach(fi => { fi.update(); })
         },
         error: function () {
             //console.log("Failed to fetch message.");
