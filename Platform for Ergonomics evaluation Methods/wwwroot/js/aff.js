@@ -335,5 +335,15 @@ document.getElementById("downloadCsvBtn").addEventListener("click", function () 
     document.body.removeChild(link);
 });
 
+document.getElementById("downloadAffBtn").addEventListener("click", function () {
+    let blob = new Blob(["[" + curData.affJsons + "]"], { type: 'text/csv' });
+    let link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob); 
+    link.download = "aff_frames.json";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
 
 refresh();
