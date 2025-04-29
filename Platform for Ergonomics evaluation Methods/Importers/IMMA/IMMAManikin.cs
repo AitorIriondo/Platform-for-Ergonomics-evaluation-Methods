@@ -102,11 +102,14 @@ public class IMMAManikin : ManikinBase
     }
     Vector3 GetControlPointForce(string name)
     {
-        if (interpolateContactForce)
-        {
-            return frameInterpolator.interpolate(getControlPoint(name).contactForces);
+        var cp = getControlPoint(name);
+        if (cp != null){
+            if (interpolateContactForce) {
+                return frameInterpolator.interpolate(getControlPoint(name).contactForces);
+            }
+            return getControlPoint(name).contactForces[frameInterpolator.lowIdx];
         }
-        return getControlPoint(name).contactForces[frameInterpolator.lowIdx];
+        return Vector3.Zero;
     }
     public override Vector3 GetLeftHandForce()
     {
