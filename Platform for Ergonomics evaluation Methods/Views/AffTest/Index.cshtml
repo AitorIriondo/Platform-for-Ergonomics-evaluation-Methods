@@ -36,12 +36,26 @@
     #btnFitScale{
         margin: 20px;
     }
-    #AFFInputs, #ForceInputs{
+
+    #AFFInputs, #ForceInputs, #ForceInputsOuter {
         background-color: #EEE;
         padding: 20px;
         margin-bottom: 20px;
     }
-    #AFFInputs .caption{
+    .Collapsed{
+        display: none;
+    }
+
+    .CollapseButton{
+        border: none;
+    }
+    #ForceInputsOuter {
+        background-color: #EEE;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    #AFFInputs .caption {
         text-align: right;
         width: 300px;
 
@@ -115,10 +129,10 @@
 <div id="graphMain">No valid manikin loaded</div>
 <button onclick="fitScale()" id="btnFitScale">Fit scale</button>
 <div id="commonControls"></div>
-<div id="ForceInputs">
-    
+<div id="ForceInputsOuter">
+    <button onclick="onBtnCollapse('ForceInputs', this);" class="CollapseButton">▷</button>Additional forces
+    <div id="ForceInputs" class="Collapsed"></div>
 </div>
-
 <div id="AFFInputs">
     <div class="selectContainer inputContainer">
         <div class="caption">Gender</div>

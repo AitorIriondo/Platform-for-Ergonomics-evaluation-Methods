@@ -259,6 +259,11 @@ function refresh() {
         _refresh();
     }, 100);
 }
+function onBtnCollapse(tgtId, btn) {
+    elm = document.getElementById(tgtId);
+    elm.classList.toggle("Collapsed");
+    btn.innerHTML = elm.classList.contains("Collapsed") ? "▷" : "▽";
+}
 function _refresh() {
     $.ajax({
         url: '/AffTest/GetGraphValArrs',
