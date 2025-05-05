@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using PEM;
 using PEM.Services;
 using PEM.Utils;
@@ -15,6 +16,10 @@ builder.Services.AddMemoryCache();  // Register memory cache
 builder.Services.AddSingleton<MessageStorageService>();
 builder.Services.AddSingleton<JsonDeserializer>();  // Register the JsonDeserializer
 builder.Services.AddSingleton<TcpServerService>();  // Register the TCP server
+
+builder.Services.Configure<FormOptions>(options => {
+    options.MultipartBodyLengthLimit = 500_000_000; // 500 MB
+});
 
 var app = builder.Build();
 
