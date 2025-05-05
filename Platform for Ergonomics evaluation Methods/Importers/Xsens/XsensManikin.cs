@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Xml;
@@ -28,7 +29,7 @@ namespace Xsens
             List<float> ret = new List<float>();
             foreach (string str in parseStrings(element, tagName))
             {
-                ret.Add(float.Parse(str.Replace(".", ",")));
+                ret.Add(float.Parse(str, CultureInfo.InvariantCulture));
             }
             return ret;
         }
