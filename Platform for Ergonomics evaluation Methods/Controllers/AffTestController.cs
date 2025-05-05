@@ -132,7 +132,7 @@ namespace PEM.Controllers
             System.GC.Collect();
             Debug.WriteLine("GC.Collect GetGraphValArrs");
             
-            MafParams? mafParams = JsonConvert.DeserializeObject<MafParams>(mafParamsJson);
+            MafParams? mafParams = mafParamsJson != null ? JsonConvert.DeserializeObject<MafParams>(mafParamsJson) : null;
             AdditionalForce[]? additionalForces = JsonConvert.DeserializeObject<AdditionalForce[]>(additionalForcesJson);
             try {
                 ManikinBase? manikin = ManikinManager.loadedManikin;

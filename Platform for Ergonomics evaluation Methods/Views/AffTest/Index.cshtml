@@ -42,7 +42,7 @@
         padding: 20px;
         margin-bottom: 20px;
     }
-    .Collapsed{
+    .Collapsed, .Hidden{
         display: none;
     }
 
@@ -134,6 +134,13 @@
     <div id="ForceInputs" class="Collapsed"></div>
 </div>
 <div id="AFFInputs">
+    <div class="selectContainer inputContainer">
+        <div class="caption">Type</div>
+        <select id="masMafSelect">
+            <option>MAS</option>
+            <option>MAF</option>
+        </select>
+    </div>
     <div class="selectContainer inputContainer">
         <div class="caption">Gender</div>
         <select id="genderSelect">

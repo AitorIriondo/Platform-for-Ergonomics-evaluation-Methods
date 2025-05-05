@@ -125,6 +125,9 @@ function refreshTime() {
 const genderSelect = document.getElementById('genderSelect');
 genderSelect.onchange = function () { refresh(); }
 
+const masMafSelect = document.getElementById('masMafSelect');
+masMafSelect.onchange = function () { refresh(); }
+
 function createSlider(parent, caption, val, minVal, maxVal, getValText, onInput) {
     var template = document.getElementById("templatesContainer").querySelector(".sliderContainer");
     var elm = template.cloneNode(true);
@@ -142,6 +145,9 @@ function createSlider(parent, caption, val, minVal, maxVal, getValText, onInput)
         slider.updateText();
         onInput();
     });
+    slider.hide = function (hide) {
+        elm.classList.toggle("Hidden", hide);
+    }
     parent.appendChild(elm);
     return slider;
 }
@@ -241,6 +247,12 @@ function getAdditionalForcesJson() {
     console.log(json);
     return json;
 }
+function getMafParamsJson() {
+    return JSON.stringify({
+        freqEffortsPerDay: [freqEffortsPerDaySlider.value, freqEffortsPerDaySlider.value],
+        effDurPerEffortSec: [effDurPerEffortSlider.value, effDurPerEffortSlider.value]
+    });
+}
 //Prevent unnecessary high refresh rate (causes ugly graphs)
 var refresher = null;
 var pendingRefreshRequest = false;
@@ -265,6 +277,9 @@ function onBtnCollapse(tgtId, btn) {
     btn.innerHTML = elm.classList.contains("Collapsed") ? "▷" : "▽";
 }
 function _refresh() {
+    const useMaf = masMafSelect.value == "MAF";
+    effDurPerEffortSlider.hide(!useMaf);
+    freqEffortsPerDaySlider.hide(!useMaf);
     $.ajax({
         url: '/AffTest/GetGraphValArrs',
         method: 'GET',
@@ -272,10 +287,7 @@ function _refresh() {
             percentCapable: percentSlider.value,
             demoLoadPercent: loadSlider.value,
             altGender: genderSelect.value,
-            mafParamsJson: JSON.stringify({
-                freqEffortsPerDay: [freqEffortsPerDaySlider.value, freqEffortsPerDaySlider.value],
-                effDurPerEffortSec: [effDurPerEffortSlider.value, effDurPerEffortSlider.value]
-            }),
+            mafParamsJson: useMaf ? getMafParamsJson() : "",
             additionalForcesJson: getAdditionalForcesJson(),
         },
         success: function (response) {
