@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Xml;
 using System.Xml.Linq;
@@ -57,6 +58,7 @@ namespace Xsens
         }
         public XsensManikin(string filename)
         {
+            Debug.Print($"XsensManikin filename:{filename}");
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(File.ReadAllText(filename));
             try
@@ -74,15 +76,18 @@ namespace Xsens
                 Joint joint = new Joint(xmlJoint.GetAttribute("label"));
                 orderedJoints.Add(joint);
                 jointsByName.Add(joint.name, joint);
-
+                Debug.Print($"Joint name:{joint.name}");
             }
+            Debug.Print($"Joint cnt:{orderedJoints.Count}");
             List<string> segmentLabels = new List<string>();
             foreach (XmlElement segment in doc.GetElementsByTagName("segment"))
             {
                 string label = segment.GetAttribute("label");
                 segmentLabels.Add(label);
+                Debug.Print($"Segment label:{label}");
             }
-            foreach(XmlNode frameNode in doc.GetElementsByTagName("frame"))
+            Debug.Print($"Segment label cnt:{segmentLabels.Count}");
+            foreach (XmlNode frameNode in doc.GetElementsByTagName("frame"))
             {
                 XmlElement frame = (XmlElement)frameNode;
                 if(frame.GetAttribute("type") == "normal")
@@ -135,12 +140,14 @@ namespace Xsens
             }
             catch (JsonReaderException ex)
             {
+                Debug.WriteLine(ex.ToString());
 
 
             }
             catch (Exception ex)
             {
-                //Debug.WriteLine(ex.ToString());
+                Debug.WriteLine(ex.ToString());
+                Debug.WriteLine(ex.StackTrace);
             }
             return null;
         }
