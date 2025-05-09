@@ -1,0 +1,1 @@
+curl -X POST http://localhost:5050 --data-binary "{\"manikinFilenames\":[\"C:/Users/iria/AppData/Local/PEM/IpsLuaExportTest/Operation_Sequence_1_Family_1_Male_w=78_s=1756.json\"],\"parserVersion\":\"0.1\",\"src\":\"IPS\",\"parser\":\"IMMAManikin\"}
