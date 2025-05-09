@@ -5,7 +5,6 @@
 
 <h2>Arm Force Field (AFF)</h2>
 
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <style>
@@ -124,7 +123,8 @@
         display: none;
     }
 </style>
-<div id="debugPanel" style="hidden"></div>
+
+<div id="debugPanel" style="display: none"></div>
 <div id="messagePanel"></div>
 <div id="graphMain">No valid manikin loaded</div>
 <button onclick="fitScale()" id="btnFitScale">Fit scale</button>
@@ -158,6 +158,17 @@
 </div>
 <button id="downloadCsvBtn">Download CSV</button>
 <button id="downloadAffBtn">Download AFF frames</button>
+<div style="text-align: center;">
+    <img src="https://upload.wikimedia.org/wikipedia/en/d/d9/HIS_EN_LOGO_WEB.png" alt="University of Skövde Logo" width="200">
+</div>
 
+<footer style="text-align: center; margin-top: 50px; font-size: 0.9em; color: #555;">
+    <p>
+        Based on the work of:<br>
+        La Delfa, N.J., Potvin, J.R.: <em>The ’Arm Force Field’ Method to Predict Manual Arm Strength Based on Only Hand Location and Force Direction</em>. Applied Ergonomics, 59, Part A, 410–421 (2017).<br>
+        Potvin, J.R.: <em>Predicting Maximum Acceptable Efforts for Repetitive Tasks: An Equation Based on Duty Cycle</em>. Human Factors, 54(2), 175–188 (2012).
+    </p>
+</footer>
 
 <script type="text/javascript" src="/js/aff.js?@DateTime.Now.Ticks"></script>
+
