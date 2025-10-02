@@ -135,7 +135,7 @@ namespace PEM.Controllers
             MafParams? mafParams = mafParamsJson != null ? JsonConvert.DeserializeObject<MafParams>(mafParamsJson) : null;
             AdditionalForce[]? additionalForces = JsonConvert.DeserializeObject<AdditionalForce[]>(additionalForcesJson);
             try {
-                ManikinBase? manikin = ManikinManager.loadedManikin;
+                ManikinBase? manikin = ManikinManager.ActiveManikin;
                 if (manikin == null)
                 {
                     return BadRequest();

@@ -34,7 +34,10 @@
             <button onclick="fetch('/Home/LoadLastManikin', {method: 'GET'});">Load Recent</button>
             <button onclick="uploadFile('XsensManikin', '.mvnx')">Upload Xsens</button>
         </div>
-
+        <select id="manikinPicker" style="margin-left:12px; min-width:220px;">
+            <option>Loading manikins…</option>
+        </select>
+        <script src="~/js/manikin.js"></script>
     </header>
     <div class="container">
         <main role="main" class="pb-3">

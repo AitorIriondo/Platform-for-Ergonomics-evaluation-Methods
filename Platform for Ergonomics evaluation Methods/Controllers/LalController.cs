@@ -22,7 +22,7 @@ namespace PEM.Controllers
         [HttpGet("/api/lal/percentiles")]
         public IActionResult GetPercentiles([FromQuery] float dt = 0.1f)
         {
-            var manikin = ManikinManager.loadedManikin;
+            var manikin = ManikinManager.ActiveManikin;
             if (manikin == null)
                 return BadRequest("No manikin loaded. Import an IMMA/Xsens manikin first.");
 

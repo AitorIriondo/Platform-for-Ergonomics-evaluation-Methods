@@ -81,11 +81,11 @@ namespace PEM.Controllers
 
             //return Json(JsonConvert.SerializeObject(test, Formatting.Indented));
 
-            if (ManikinManager.loadedManikin == null)
+            if (ManikinManager.ActiveManikin == null)
             {
                 return BadRequest();
             }
-            StickieData stickieData = new StickieData(ManikinManager.loadedManikin);
+            StickieData stickieData = new StickieData(ManikinManager.ActiveManikin);
 
             return Json(JsonConvert.SerializeObject(stickieData, Formatting.Indented));
         }

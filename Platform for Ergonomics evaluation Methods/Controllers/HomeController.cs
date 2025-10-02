@@ -48,10 +48,10 @@ namespace PEM.Controllers
         public IActionResult GetLoadedManikinInfo()
         {
             string type = "None";
-            if (ManikinManager.loadedManikin != null)
+            if (ManikinManager.ActiveManikin != null)
             {
-                type = ManikinManager.loadedManikin.GetType().ToString();
-                string description = ManikinManager.loadedManikin.GetDescriptiveName();
+                type = ManikinManager.ActiveManikin.GetType().ToString();
+                string description = ManikinManager.ActiveManikin.GetDescriptiveName();
                 return Json(new { type, description });
             }
             return Json(new { type });
