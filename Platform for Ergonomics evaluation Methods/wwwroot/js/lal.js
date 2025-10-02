@@ -3,10 +3,10 @@
     const tableBody = document.querySelector("#lalResults tbody");
 
     btn.addEventListener("click", async () => {
-        const dt = parseFloat(document.getElementById("dtInput").value) || 0.1;
+        //const dt = parseFloat(document.getElementById("dtInput").value) || 0.1;
 
         try {
-            const response = await fetch(`/api/lal/percentiles?dt=${dt}`);
+            const response = await fetch(`/api/lal/percentiles`);
             if (!response.ok) {
                 const error = await response.json();
                 alert("Error: " + (error.error || response.statusText));

@@ -5,74 +5,71 @@ using System.Numerics;
 
 namespace PEM.Models
 {
-    /// <summary>
-    /// LAL (Lund Action Levels) helper that computes 10th/50th/90th percentiles
-    /// for fixed metrics derived from the loaded ManikinBase timeline:
-    /// - HeadFlexion (approximated using trunk C7–L5S1 line)
-    /// - UpperArmElevation (left/right, relative to trunk C7–L5S1)
-    /// - UpperArmVelocity (left/right, deg/s from UpperArmElevation)
-    /// - WristVelocity (left/right, deg/s from angle between forearm and hand)
-    ///
-    /// NOTE: Single class by design (no extra DTOs).
-    /// </summary>
     public class Lal
     {
-        public Dictionary<string, Dictionary<string, double>> Compute(ManikinBase manikin, float dtSeconds = 0.1f)
+        public Dictionary<string, Dictionary<string, double>> Compute(ManikinBase manikin)
         {
             if (manikin == null)
                 throw new ArgumentNullException(nameof(manikin));
 
-            var duration = manikin.GetTimelineDuration();
-            if (duration <= 0) throw new InvalidOperationException("Manikin timeline has zero duration.");
+            if (manikin.postureTimeSteps == null || manikin.postureTimeSteps.Count == 0)
+                throw new InvalidOperationException("No time steps found in manikin data.");
 
             // Series
-            var headFlex = new List<double>(); // deg
+            var headFlex = new List<double>();
             var uaElevL = new List<double>();
             var uaElevR = new List<double>();
-            var uaVelL = new List<double>(); // deg/s
+            var uaVelL = new List<double>();
             var uaVelR = new List<double>();
             var wristVelL = new List<double>();
             var wristVelR = new List<double>();
 
-            // Previous samples for velocities
+            // Previous samples for velocity calculation
             double? prevUaL = null, prevUaR = null, prevWrL = null, prevWrR = null;
+            float? prevTime = null;
 
-            for (float t = 0; t < duration; t += dtSeconds)
+            foreach (var t in manikin.postureTimeSteps)
             {
                 manikin.SetTime(t);
 
-                // Trunk (C7 relative to L5S1)
+                // Spine vector (C7T1 relative to L5S1)
                 if (!manikin.TryGetJointPosition(JointID.L5S1, out var l5s1)) continue;
                 if (!manikin.TryGetJointPosition(JointID.C7T1, out var c7)) continue;
                 var trunk = SafeDir(c7 - l5s1);
                 var vertical = new Vector3(0, 0, 1);
 
-                // HeadFlex proxy (trunk flexion vs global vertical)
+                // Head flexion proxy (trunk vs vertical)
                 headFlex.Add(AngleDeg(trunk, vertical));
 
-                // Upper arm elevation: angle between (Shoulder→Elbow) and trunk
+                // Upper arm elevation left
                 if (manikin.TryGetJointPosition(JointID.LeftShoulder, out var lSh) &&
                     manikin.TryGetJointPosition(JointID.LeftElbow, out var lEl))
                 {
                     var uvecL = SafeDir(lEl - lSh);
                     var elevL = AngleDeg(uvecL, trunk);
                     uaElevL.Add(elevL);
-                    if (prevUaL.HasValue) uaVelL.Add(Math.Abs(elevL - prevUaL.Value) / dtSeconds);
+
+                    if (prevUaL.HasValue && prevTime.HasValue)
+                        uaVelL.Add(Math.Abs(elevL - prevUaL.Value) / (t - prevTime.Value));
+
                     prevUaL = elevL;
                 }
 
+                // Upper arm elevation right
                 if (manikin.TryGetJointPosition(JointID.RightShoulder, out var rSh) &&
                     manikin.TryGetJointPosition(JointID.RightElbow, out var rEl))
                 {
                     var uvecR = SafeDir(rEl - rSh);
                     var elevR = AngleDeg(uvecR, trunk);
                     uaElevR.Add(elevR);
-                    if (prevUaR.HasValue) uaVelR.Add(Math.Abs(elevR - prevUaR.Value) / dtSeconds);
+
+                    if (prevUaR.HasValue && prevTime.HasValue)
+                        uaVelR.Add(Math.Abs(elevR - prevUaR.Value) / (t - prevTime.Value));
+
                     prevUaR = elevR;
                 }
 
-                // Wrist angular velocity: angle between forearm (Elbow→Wrist) and "hand" direction.
-                // Hand direction ≈ wrist→knuckle at 36% of forearm length (same approximation used by AFF).
+                // Wrist angular velocity left
                 if (manikin.TryGetJointPosition(JointID.LeftElbow, out lEl) &&
                     manikin.TryGetJointPosition(JointID.LeftWrist, out var lWr))
                 {
@@ -81,10 +78,14 @@ namespace PEM.Models
                     var handDirL = SafeDir(knuckleL - lWr);
                     var foreDirL = SafeDir(foreL);
                     var wristAngL = AngleDeg(foreDirL, handDirL);
-                    if (prevWrL.HasValue) wristVelL.Add(Math.Abs(wristAngL - prevWrL.Value) / dtSeconds);
+
+                    if (prevWrL.HasValue && prevTime.HasValue)
+                        wristVelL.Add(Math.Abs(wristAngL - prevWrL.Value) / (t - prevTime.Value));
+
                     prevWrL = wristAngL;
                 }
 
+                // Wrist angular velocity right
                 if (manikin.TryGetJointPosition(JointID.RightElbow, out rEl) &&
                     manikin.TryGetJointPosition(JointID.RightWrist, out var rWr))
                 {
@@ -93,9 +94,14 @@ namespace PEM.Models
                     var handDirR = SafeDir(knuckleR - rWr);
                     var foreDirR = SafeDir(foreR);
                     var wristAngR = AngleDeg(foreDirR, handDirR);
-                    if (prevWrR.HasValue) wristVelR.Add(Math.Abs(wristAngR - prevWrR.Value) / dtSeconds);
+
+                    if (prevWrR.HasValue && prevTime.HasValue)
+                        wristVelR.Add(Math.Abs(wristAngR - prevWrR.Value) / (t - prevTime.Value));
+
                     prevWrR = wristAngR;
                 }
+
+                prevTime = t;
             }
 
             var outDict = new Dictionary<string, Dictionary<string, double>>();
@@ -117,7 +123,7 @@ namespace PEM.Models
             return v / len;
         }
 
-        private static double AngleDeg(in Vector3 a, in Vector3 b)
+        private static double AngleDeg(Vector3 a, Vector3 b)
         {
             var dot = Math.Clamp(Vector3.Dot(a, b), -1f, 1f);
             return Math.Acos(dot) * (180.0 / Math.PI);
@@ -140,10 +146,10 @@ namespace PEM.Models
             };
         }
 
-        // Percentile with linear interpolation between ranks (Excel PERCENTILE.INC style)
         private static double GetPercentile(List<double> sortedValues, double percentile)
         {
             if (sortedValues.Count == 1) return sortedValues[0];
+
             double pos = (sortedValues.Count - 1) * percentile / 100.0;
             int lo = (int)Math.Floor(pos);
             int hi = (int)Math.Ceiling(pos);

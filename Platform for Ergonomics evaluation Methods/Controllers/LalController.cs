@@ -29,7 +29,7 @@ namespace PEM.Controllers
             try
             {
                 var lal = new Lal();
-                var result = lal.Compute(manikin, dt);
+                var result = lal.Compute(manikin);
                 return Ok(result);
             }
             catch (Exception ex)
