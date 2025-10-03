@@ -45,7 +45,7 @@ namespace PEM.Models
                 if (manikin.TryGetJointPosition(JointID.LeftShoulder, out var lSh) &&
                     manikin.TryGetJointPosition(JointID.LeftElbow, out var lEl))
                 {
-                    var uvecL = SafeDir(lEl - lSh);
+                    var uvecL = SafeDir(lSh-lEl);
                     var elevL = AngleDeg(uvecL, trunk);
                     uaElevL.Add(elevL);
 
@@ -59,7 +59,7 @@ namespace PEM.Models
                 if (manikin.TryGetJointPosition(JointID.RightShoulder, out var rSh) &&
                     manikin.TryGetJointPosition(JointID.RightElbow, out var rEl))
                 {
-                    var uvecR = SafeDir(rEl - rSh);
+                    var uvecR = SafeDir(rSh - rEl);
                     var elevR = AngleDeg(uvecR, trunk);
                     uaElevR.Add(elevR);
 

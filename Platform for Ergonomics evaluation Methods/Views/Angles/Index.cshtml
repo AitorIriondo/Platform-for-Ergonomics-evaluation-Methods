@@ -1,0 +1,15 @@
+﻿@{
+    ViewData["Title"] = "Angles Over Time";
+}
+
+<h2>Angles Over Time</h2>
+<p>Visualize the calculated angles across the manikin timeline.</p>
+
+<div style="width:100%; max-width:1200px; margin:auto;">
+    <canvas id="anglesChart"></canvas>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/angles.js"></script>
+}
