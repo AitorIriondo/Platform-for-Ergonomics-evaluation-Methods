@@ -1,84 +1,267 @@
-﻿let anglesChart = null;
+﻿// ===== State & constants =====
+let anglesChart = null;
+let currentXAxis = null; // array of times on the chart
+let seriesCounter = 0;
 
-async function loadChart() {
-    const res = await fetch('/api/angles/timeseries');
-    const data = await res.json();
+const COLOR_PALETTE = [
+    "#e6194b", "#3cb44b", "#0082c8", "#f58231", "#911eb4", "#46f0f0",
+    "#f032e6", "#d2f53c", "#fabebe", "#008080", "#e6beff", "#aa6e28",
+    "#fffac8", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000080",
+    "#808080", "#000000"
+];
 
-    const ctx = document.getElementById("anglesChart").getContext("2d");
+function nextColor(i) { return COLOR_PALETTE[i % COLOR_PALETTE.length]; }
 
-    // Destroy old chart if it exists (prevents layering)
-    if (anglesChart) {
-        anglesChart.destroy();
+// ===== Utilities =====
+function nearlyEqual(a, b, eps = 1e-6) { return Math.abs(a - b) <= eps; }
+
+function arraysEqual(a, b, eps = 1e-6) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!nearlyEqual(+a[i], +b[i], eps)) return false;
+    return true;
+}
+
+// nearest-neighbor resampling of srcValues from srcTimes onto targetTimes
+function resampleToAxis(srcTimes, srcValues, targetTimes) {
+    const out = new Array(targetTimes.length);
+    let i = 0;
+    for (let k = 0; k < targetTimes.length; k++) {
+        const t = +targetTimes[k];
+        while (i + 1 < srcTimes.length &&
+            Math.abs(srcTimes[i + 1] - t) <= Math.abs(srcTimes[i] - t)) {
+            i++;
+        }
+        out[k] = srcValues[i];
     }
+    return out;
+}
 
+function addSeriesChip(id, label, color) {
+    const list = document.getElementById('seriesList');
+    if (!list) return;
+    const chip = document.createElement('span');
+    chip.className = 'series-chip';
+    chip.dataset.seriesId = id;
+
+    const dot = document.createElement('span');
+    dot.className = 'color-dot';
+    dot.style.background = color;
+
+    const text = document.createElement('span');
+    text.textContent = label;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = '✕';
+    btn.title = 'Remove series';
+    btn.addEventListener('click', () => removeSeries(id));
+
+    chip.append(dot, text, btn);
+    list.appendChild(chip);
+}
+
+function removeSeries(id) {
+    if (!anglesChart) return;
+    const idx = anglesChart.data.datasets.findIndex(ds => ds._seriesId === id);
+    if (idx >= 0) {
+        anglesChart.data.datasets.splice(idx, 1);
+        anglesChart.update('none');
+    }
+    const chip = document.querySelector(`.series-chip[data-series-id="${id}"]`);
+    if (chip) chip.remove();
+}
+
+// ===== Chart bootstrap =====
+function ensureChart() {
+    if (anglesChart) return;
+    const canvas = document.getElementById('anglesChart');
+    if (!canvas) {
+        console.warn('Missing #anglesChart canvas');
+        return;
+    }
+    const ctx = canvas.getContext('2d');
     anglesChart = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: data.time,
-            datasets: [
-                {
-                    label: "Head Flexion",
-                    data: data.headFlexion,
-                    borderColor: "red",
-                    borderWidth: 1,
-                    fill: false,
-                    tension: 0.1,
-                    showLine: true,
-                    pointRadius: 0,        // 🚀 no points
-                    pointHoverRadius: 0
-                },
-                {
-                    label: "Upper Arm Left",
-                    data: data.upperArmLeft,
-                    borderColor: "blue",
-                    borderWidth: 1,
-                    fill: false,
-                    tension: 0.1,
-                    showLine: true,
-                    pointRadius: 0,        // 🚀 no points
-                    pointHoverRadius: 0
-                },
-                {
-                    label: "Upper Arm Right",
-                    data: data.upperArmRight,
-                    borderColor: "green",
-                    borderWidth: 1,
-                    fill: false,
-                    tension: 0.1,
-                    showLine: true,
-                    pointRadius: 0,        // 🚀 no points
-                    pointHoverRadius: 0
-                }
-            ]
-        },
+        data: { labels: currentXAxis || [], datasets: [] },
         options: {
             responsive: true,
-            elements: {
-                point: {
-                    radius: 0,        // 🚀 global default = no points
-                    hoverRadius: 0,
-                    hitRadius: 0
-                }
-            },
+            elements: { point: { radius: 0, hoverRadius: 0, hitRadius: 0 } },
+            plugins: { decimation: { enabled: true, algorithm: 'lttb', samples: 1200 } },
             scales: {
-                x: { title: { display: true, text: "Time (s)" } },
-                y: { title: { display: true, text: "Angle (deg)" } }
+                x: { title: { display: true, text: 'Time (s)' } },
+                y: { title: { display: true, text: 'Angle (deg)' } }
             }
         }
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadChart();
-    const picker = document.getElementById('manikinPicker');
-    if (picker) {
-        picker.addEventListener('change', async (e) => {
-            await fetch('/api/manikin/select', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: e.target.value })
-            });
-            loadChart();
+// ===== API helpers (defensive) =====
+async function fetchManikinList() {
+    // Try API
+    try {
+        const r = await fetch('/api/manikin/list');
+        if (r.ok) {
+            const data = await r.json();
+            // supports either { items: [...] } or raw array
+            if (Array.isArray(data)) return data;
+            if (Array.isArray(data.items)) return data.items;
+        }
+    } catch (e) {
+        console.warn('manikin/list fetch failed', e);
+    }
+    // Fallback: clone global picker from layout, if present
+    const globalPicker = document.getElementById('manikinPicker');
+    if (globalPicker) {
+        return Array.from(globalPicker.options).map(o => ({ id: o.value, name: o.textContent }));
+    }
+    return [];
+}
+
+async function fetchAngleOptions() {
+    try {
+        const r = await fetch('/api/angles/available');
+        if (r.ok) return await r.json();
+    } catch (e) {
+        console.warn('angles/available fetch failed', e);
+    }
+    // Fallback
+    return ['HeadFlexion', 'UpperArmLeft', 'UpperArmRight'];
+}
+
+async function fetchSeries(manikinId, angleKey) {
+    const url = `/api/angles/series?manikinId=${encodeURIComponent(manikinId)}&angle=${encodeURIComponent(angleKey)}`;
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(await r.text());
+    return await r.json(); // { time, values, label, manikinId, angle }
+}
+
+// ===== Selectors & Add button =====
+async function populateSelectors() {
+    const manSel = document.getElementById('anglesManikinSelect');
+    const angSel = document.getElementById('angleKindSelect');
+    if (!manSel || !angSel) {
+        console.warn('Missing selectors #anglesManikinSelect or #angleKindSelect');
+        return;
+    }
+
+    const manikins = await fetchManikinList();
+    const angles = await fetchAngleOptions();
+
+    // Fill manikin select
+    manSel.innerHTML = '';
+    for (const m of manikins) {
+        const opt = document.createElement('option');
+        opt.value = m.id ?? m; // support either object or raw id
+        opt.textContent = (m.name ?? m.id ?? m) || '(unnamed manikin)';
+        manSel.appendChild(opt);
+    }
+
+    // Fill angle select
+    angSel.innerHTML = '';
+    for (const a of angles) {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent =
+            a === 'HeadFlexion' ? 'Head Flexion' :
+                a === 'UpperArmLeft' ? 'Upper Arm (Left)' :
+                    a === 'UpperArmRight' ? 'Upper Arm (Right)' : a;
+        angSel.appendChild(opt);
+    }
+}
+
+async function onAddClick() {
+    const manSel = document.getElementById('anglesManikinSelect');
+    const angSel = document.getElementById('angleKindSelect');
+    if (!manSel || !angSel || !manSel.value || !angSel.value) return;
+
+    try {
+        const series = await fetchSeries(manSel.value, angSel.value);
+        ensureChart();
+
+        // If no X axis yet OR this series is longer, adopt it
+        if (!currentXAxis || series.time.length > currentXAxis.length) {
+            currentXAxis = series.time.slice();
+            if (anglesChart) anglesChart.data.labels = currentXAxis.slice();
+
+            // Pad existing datasets to new length
+            if (anglesChart) {
+                for (const ds of anglesChart.data.datasets) {
+                    while (ds.data.length < currentXAxis.length) {
+                        ds.data.push(null);
+                    }
+                }
+            }
+        }
+
+        // Prepare Y data with null padding
+        let y = series.values.slice();
+        if (y.length < currentXAxis.length) {
+            while (y.length < currentXAxis.length) y.push(null);
+        }
+
+        const color = nextColor(seriesCounter++);
+        const id = `s${Date.now()}_${seriesCounter}`;
+        anglesChart.data.datasets.push({
+            _seriesId: id,
+            label: series.label,
+            data: y,
+            borderColor: color,
+            borderWidth: 1,
+            fill: false,
+            tension: 0.1,
+            pointRadius: 0,
+            pointHoverRadius: 0,
+            showLine: true
+        });
+        addSeriesChip(id, series.label, color);
+        anglesChart.update('none');
+    } catch (e) {
+        alert(e.message || e);
+    }
+}
+
+// CSV download
+function downloadCsv() {
+    if (!anglesChart || !currentXAxis) {
+        alert("No data to download.");
+        return;
+    }
+
+    const header = ["Time (s)", ...anglesChart.data.datasets.map(ds => ds.label)];
+    let csv = header.join(",") + "\n";
+
+    for (let i = 0; i < currentXAxis.length; i++) {
+        const row = [currentXAxis[i]];
+        for (const ds of anglesChart.data.datasets) {
+            row.push(ds.data[i] !== undefined && ds.data[i] !== null ? ds.data[i] : "");
+        }
+        csv += row.join(",") + "\n";
+    }
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "angles_data.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+document.getElementById("downloadCsvBtn")?.addEventListener("click", downloadCsv);
+
+
+// ===== Bootstrap =====
+document.addEventListener('DOMContentLoaded', async () => {
+    await populateSelectors();
+    ensureChart();
+
+    const btn = document.getElementById('addSeriesBtn');
+    if (btn) btn.addEventListener('click', onAddClick);
+
+    // Optional: If global layout manikinPicker changes, refresh our manikin list
+    const globalPicker = document.getElementById('manikinPicker');
+    if (globalPicker) {
+        globalPicker.addEventListener('change', async () => {
+            await populateSelectors();
         });
     }
 });
