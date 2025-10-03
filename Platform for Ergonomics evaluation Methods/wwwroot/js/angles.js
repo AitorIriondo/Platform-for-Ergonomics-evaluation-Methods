@@ -62,14 +62,46 @@ function addSeriesChip(id, label, color) {
 
 function removeSeries(id) {
     if (!anglesChart) return;
+
+    // Remove dataset
     const idx = anglesChart.data.datasets.findIndex(ds => ds._seriesId === id);
     if (idx >= 0) {
         anglesChart.data.datasets.splice(idx, 1);
-        anglesChart.update('none');
     }
+
+    // Remove chip
     const chip = document.querySelector(`.series-chip[data-series-id="${id}"]`);
     if (chip) chip.remove();
+
+    // If no datasets left, reset
+    if (anglesChart.data.datasets.length === 0) {
+        currentXAxis = null;
+        anglesChart.data.labels = [];
+        anglesChart.update('none');
+        return;
+    }
+
+    // 1) Find new longest length
+    const newLen = Math.max(...anglesChart.data.datasets.map(ds => ds.data.length));
+
+    // 2) Shrink/grow currentXAxis
+    currentXAxis = currentXAxis.slice(0, newLen);
+
+    // 3) Adjust labels
+    anglesChart.data.labels = currentXAxis.slice();
+
+    // 4) Truncate/pad datasets
+    for (const ds of anglesChart.data.datasets) {
+        if (ds.data.length > newLen) {
+            ds.data.length = newLen; // truncate
+        } else {
+            while (ds.data.length < newLen) ds.data.push(null); // pad
+        }
+    }
+
+    anglesChart.update('none');
 }
+
 
 // ===== Chart bootstrap =====
 function ensureChart() {
