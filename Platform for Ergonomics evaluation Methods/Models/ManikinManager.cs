@@ -6,7 +6,6 @@ namespace PEM
 {
     public static class ManikinManager
     {
-        // Many manikins loaded in memory, keyed by a stable id (e.g., filename without extension or a GUID)
         public static readonly Dictionary<string, ManikinBase> LoadedManikins = new();
 
         // The chosen/active manikin id (used by AFF/LAL/etc.)
@@ -85,10 +84,6 @@ namespace PEM
             return removed;
         }
 
-        /// <summary>
-        /// If you already have a message-based loader (JSON instructing which parser to use), 
-        /// change it to create a manikin and call Add(id, manikin).
-        /// </summary>
         public static bool ParseMessage(string json)
         {
             try
@@ -99,7 +94,6 @@ namespace PEM
                 // Collect files from either 'manikinFilenames' (array) or legacy 'file' (string)
                 var files = new List<string>();
 
-                // New shape: { parser: "...", manikinFilenames: ["path1", "path2", ...] }
                 if (message?.manikinFilenames != null)
                 {
                     foreach (var v in message.manikinfFilenames ?? message.manikinFilenames) // tolerate typo if any

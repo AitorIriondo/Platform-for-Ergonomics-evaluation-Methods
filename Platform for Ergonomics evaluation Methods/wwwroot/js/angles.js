@@ -149,16 +149,12 @@ async function fetchManikinList() {
     return [];
 }
 
-async function fetchAngleOptions() {
-    try {
-        const r = await fetch('/api/angles/available');
-        if (r.ok) return await r.json();
-    } catch (e) {
-        console.warn('angles/available fetch failed', e);
-    }
-    // Fallback
-    return ['HeadFlexion', 'UpperArmLeft', 'UpperArmRight'];
+async function fetchAngleOptions(manikinId) {
+    const r = await fetch(`/api/angles/available${manikinId ? `?manikinId=${encodeURIComponent(manikinId)}` : ""}`);
+    if (r.ok) return await r.json();  // now [{key:"backAng", label:"Back Flexion..."}]
+    return [];
 }
+
 
 async function fetchSeries(manikinId, angleKey) {
     const url = `/api/angles/series?manikinId=${encodeURIComponent(manikinId)}&angle=${encodeURIComponent(angleKey)}`;
@@ -171,35 +167,37 @@ async function fetchSeries(manikinId, angleKey) {
 async function populateSelectors() {
     const manSel = document.getElementById('anglesManikinSelect');
     const angSel = document.getElementById('angleKindSelect');
-    if (!manSel || !angSel) {
-        console.warn('Missing selectors #anglesManikinSelect or #angleKindSelect');
-        return;
-    }
+    if (!manSel || !angSel) return;
 
+    // --- Fill manikin select ---
     const manikins = await fetchManikinList();
-    const angles = await fetchAngleOptions();
-
-    // Fill manikin select
     manSel.innerHTML = '';
     for (const m of manikins) {
         const opt = document.createElement('option');
-        opt.value = m.id ?? m; // support either object or raw id
-        opt.textContent = (m.name ?? m.id ?? m) || '(unnamed manikin)';
+        opt.value = m.id ?? m;                // support either {id,name} or raw string
+        opt.textContent = m.name ?? m.id ?? m;
         manSel.appendChild(opt);
     }
 
-    // Fill angle select
+    // --- Fill angle select (based on first manikin or current selection) ---
+    const chosenManikinId = manSel.value;
+    const angles = await fetchAngleOptions(chosenManikinId);
+
     angSel.innerHTML = '';
     for (const a of angles) {
         const opt = document.createElement('option');
-        opt.value = a;
-        opt.textContent =
-            a === 'HeadFlexion' ? 'Head Flexion' :
-                a === 'UpperArmLeft' ? 'Upper Arm (Left)' :
-                    a === 'UpperArmRight' ? 'Upper Arm (Right)' : a;
+        if (typeof a === "string") {
+            opt.value = a;
+            opt.textContent = a;
+        } else {
+            opt.value = a.key;
+            opt.textContent = a.label || a.key;
+        }
         angSel.appendChild(opt);
     }
 }
+
+
 
 async function onAddClick() {
     const manSel = document.getElementById('anglesManikinSelect');

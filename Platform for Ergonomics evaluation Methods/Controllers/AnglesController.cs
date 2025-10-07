@@ -1,139 +1,152 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using PEM.Models;
-using System.Numerics;
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Numerics;
+using Newtonsoft.Json.Linq;
 
 namespace PEM.Controllers
 {
     public partial class AnglesController : Controller
     {
-        // UI page (keep as-is)
+        // Serve the UI page
         [HttpGet]
         public IActionResult Index() => View();
 
-        // Returns available angle keys for the dropdown
+        // Returns all available angles (computed + imported components)
         [HttpGet("/api/angles/available")]
-        public IActionResult GetAvailableAngles()
+        public IActionResult GetAvailableAngles([FromQuery] string manikinId = null)
         {
-            return Ok(new[] { "HeadFlexion", "UpperArmLeft", "UpperArmRight" });
+            var manikin = ResolveManikin(manikinId);
+            if (manikin == null)
+                return BadRequest("No manikin loaded.");
+
+            var mName = manikin.GetDescriptiveName() ?? manikinId ?? "Manikin";
+
+            var list = new List<object>();
+
+            // --- 1. Computed criterias ---
+            var crit = new ManikinCriterias(manikin);
+            foreach (var key in crit.ToSeriesDictionary().Keys)
+            {
+                var raw = ManikinCriterias.HumanLabels.TryGetValue(key, out var lbl) ? lbl : key;
+                list.Add(new { key, label = $"{mName} • {raw}" });
+            }
+
+            // --- 2. Imported MVNX joint angles ---
+            if (manikin is Xsens.XsensManikin xs && xs.jointAnglesByName.Count > 0)
+            {
+                foreach (var jointName in xs.jointAnglesByName.Keys.OrderBy(k => k))
+                {
+                    foreach (var comp in new[] { "X", "Y", "Z" })
+                    {
+                        list.Add(new
+                        {
+                            key = $"IMP_{jointName}_{comp}",
+                            label = $"{mName} • (IMP) {jointName} [{comp}]"
+                        });
+                    }
+                }
+            }
+
+            return Ok(list);
         }
 
-        // Returns a single time-series so the UI can mix manikins and angles arbitrarily
+        // Returns one selected angle time series
         [HttpGet("/api/angles/series")]
         public IActionResult GetSeries([FromQuery] string manikinId, [FromQuery] string angle)
         {
-            ManikinBase manikin = null;
-
-            if (!string.IsNullOrWhiteSpace(manikinId))
-            {
-                if (!ManikinManager.LoadedManikins.TryGetValue(manikinId, out manikin))
-                    return NotFound($"Manikin '{manikinId}' not loaded.");
-            }
-            else
-            {
-                manikin = ManikinManager.ActiveManikin;
-            }
-
+            var manikin = ResolveManikin(manikinId);
             if (manikin == null)
                 return BadRequest("No manikin loaded.");
 
             if (string.IsNullOrWhiteSpace(angle))
-                return BadRequest("Missing 'angle'.");
+                return BadRequest("Missing 'angle' parameter.");
 
-            if (!IsSupportedAngle(angle))
-                return BadRequest($"Unsupported angle '{angle}'.");
-
-            var times = manikin.postureTimeSteps;
-            if (times == null || times.Count == 0)
-                return BadRequest("Selected manikin has no timeline.");
-
-            var values = ComputeAngleSeries(manikin, angle); // same length as times
-            var label = $"{(manikin.GetDescriptiveName() ?? manikinId)} • {HumanLabel(angle)}";
-
-            return Ok(new
+            try
             {
-                manikinId = manikinId,
-                angle = angle,
-                label = label,
-                time = times,   // List<float>
-                values = values // List<double>
-            });
-        }
-
-        private static bool IsSupportedAngle(string a)
-            => a == "HeadFlexion" || a == "UpperArmLeft" || a == "UpperArmRight";
-
-        private static string HumanLabel(string a) => a switch
-        {
-            "HeadFlexion" => "Head Flexion",
-            "UpperArmLeft" => "Upper Arm (Left)",
-            "UpperArmRight" => "Upper Arm (Right)",
-            _ => a
-        };
-
-        private static List<double> ComputeAngleSeries(ManikinBase manikin, string angle)
-        {
-            var times = manikin.postureTimeSteps;
-            var list = new List<double>(times.Count);
-            foreach (var t in times)
-            {
-                manikin.SetTime(t);
-
-                // Trunk proxy = C7T1 - L5S1
-                Vector3 trunk = new Vector3(0, 0, 1);
-                if (manikin.TryGetJointPosition(JointID.L5S1, out var l5s1) &&
-                    manikin.TryGetJointPosition(JointID.C7T1, out var c7t1))
+                // --- Imported component path ---
+                if (angle.StartsWith("IMP_", StringComparison.OrdinalIgnoreCase))
                 {
-                    trunk = SafeDir(c7t1 - l5s1);
+                    var mName = manikin.GetDescriptiveName() ?? manikinId ?? "Manikin";
+                    // Example key: IMP_jRightShoulder_X
+                    var parts = angle.Split('_', 3);
+                    if (parts.Length < 3)
+                        return BadRequest("Invalid imported angle key format.");
+
+                    var jointName = parts[1];
+                    var comp = parts[2].ToUpperInvariant();
+
+                    if (manikin is Xsens.XsensManikin xs &&
+                        xs.jointAnglesByName.TryGetValue(jointName, out var vectors))
+                    {
+                        Func<Vector3, double> selector = comp switch
+                        {
+                            "X" => v => v.X,
+                            "Y" => v => v.Y,
+                            "Z" => v => v.Z,
+                            _ => v => 0
+                        };
+
+                        var n = Math.Min(vectors.Count, manikin.postureTimeSteps.Count);
+                        var time = manikin.postureTimeSteps.Take(n).ToList();
+                        var values = new List<double>(n);
+                        for (int i = 0; i < n; i++)
+                        {
+                            var val = selector(vectors[i]);
+                            if (double.IsNaN(val) || double.IsInfinity(val))
+                                val = 0.0;
+                            values.Add(val);
+                        }
+
+                        return Ok(new
+                        {
+                            manikinId,
+                            angle,
+                            label = $"{mName} • (IMP) {jointName} [{comp}]",
+                            time,
+                            values
+                        });
+                    }
+
+                    return NotFound($"Imported joint '{jointName}' not found.");
                 }
 
-                switch (angle)
+                // --- Computed criterias path ---
+                var crit = new ManikinCriterias(manikin);
+                var dict = crit.ToSeriesDictionary();
+                if (!dict.TryGetValue(angle, out var valuesComputed))
+                    return NotFound($"Angle '{angle}' not found.");
+
+                var human = ManikinCriterias.HumanLabels.TryGetValue(angle, out var lbl) ? lbl : angle;
+                var labelComputed = $"{(manikin.GetDescriptiveName() ?? manikinId)} • {human}";
+
+                return Ok(new
                 {
-                    case "HeadFlexion":
-                        {
-                            var vertical = new Vector3(0, 0, 1);
-                            list.Add(AngleDeg(trunk, vertical));
-                            break;
-                        }
-                    case "UpperArmLeft":
-                        {
-                            if (manikin.TryGetJointPosition(JointID.LeftShoulder, out var lSh) &&
-                                manikin.TryGetJointPosition(JointID.LeftElbow, out var lEl))
-                            {
-                                list.Add(AngleDeg(SafeDir(lEl - lSh), trunk));
-                            }
-                            else list.Add(0);
-                            break;
-                        }
-                    case "UpperArmRight":
-                        {
-                            if (manikin.TryGetJointPosition(JointID.RightShoulder, out var rSh) &&
-                                manikin.TryGetJointPosition(JointID.RightElbow, out var rEl))
-                            {
-                                list.Add(AngleDeg(SafeDir(rEl - rSh), trunk));
-                            }
-                            else list.Add(0);
-                            break;
-                        }
-                    default:
-                        list.Add(0);
-                        break;
-                }
+                    manikinId,
+                    angle,
+                    label = labelComputed,
+                    time = crit.Time,
+                    values = valuesComputed
+                });
             }
-            return list;
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        private static Vector3 SafeDir(Vector3 v)
+        // Helper
+        private static ManikinBase ResolveManikin(string manikinId)
         {
-            var len = v.Length();
-            return (len < 1e-6f) ? new Vector3(0, 0, 1) : v / len;
-        }
-
-        private static double AngleDeg(Vector3 a, Vector3 b)
-        {
-            var dot = Math.Clamp(Vector3.Dot(a, b), -1f, 1f);
-            return Math.Acos(dot) * (180.0 / Math.PI);
+            if (!string.IsNullOrWhiteSpace(manikinId))
+            {
+                if (ManikinManager.LoadedManikins.TryGetValue(manikinId, out var m))
+                    return m;
+                return null;
+            }
+            return ManikinManager.ActiveManikin;
         }
     }
 }

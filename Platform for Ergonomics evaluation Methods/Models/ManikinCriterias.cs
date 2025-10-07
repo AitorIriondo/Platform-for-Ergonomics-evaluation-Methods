@@ -151,13 +151,15 @@ namespace PEM.Models
                 rightElbowAng.Add(ManikinVectors.AngleDeg(rUpper, rLower));
                 leftElbowAng.Add(ManikinVectors.AngleDeg(lUpper, lLower));
 
-                // Wrist angles need hand axes; keep placeholders until available
-                rightWristAng.Add(double.NaN);
-                leftWristAng.Add(double.NaN);
 
-                // Bend (approx): hand proj in arm plane vs forearm
+
+                
                 var rHandProj = ManikinVectors.ProjectOnPlane(rLower, V.rightArmPlaneNormal[i]);
                 var lHandProj = ManikinVectors.ProjectOnPlane(lLower, V.leftArmPlaneNormal[i]);
+                // Wrist angles need hand axes; keep placeholders until available
+                rightWristAng.Add(ManikinVectors.AngleDeg(rHandProj, rLower));
+                leftWristAng.Add(ManikinVectors.AngleDeg(rHandProj, rLower));
+                // Bend (approx): hand proj in arm plane vs forearm
                 rightWristBendAng.Add(ManikinVectors.AngleDeg(rHandProj, rLower));
                 leftWristBendAng.Add(ManikinVectors.AngleDeg(lHandProj, lLower));
 
@@ -232,5 +234,46 @@ namespace PEM.Models
                 [nameof(lAnkleAngle)] = lAnkleAngle,
             };
         }
+
+        public static readonly Dictionary<string, string> HumanLabels =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                // Back & Neck
+                ["backAng"] = "Back Flexion/Extension (Sagittal)",
+                ["backTwistAng"] = "Back Axial Rotation (Twist)",
+                ["backBendAng"] = "Back Lateral Bending (Frontal)",
+                ["neckAng"] = "Neck Flexion/Extension (approx)",
+                ["neckBendAng"] = "Neck Lateral Bending (approx)",
+                ["neckTwistAng"] = "Neck Axial Rotation (approx)",
+
+                // Upper Arms
+                ["rightUpperArmBackAng"] = "Right Upper Arm vs Spine",
+                ["leftUpperArmBackAng"] = "Left Upper Arm vs Spine",
+                ["rightUpperArmBackSagitalAng"] = "Right Upper Arm (Sagittal)",
+                ["leftUpperArmBackSagitalAng"] = "Left Upper Arm (Sagittal)",
+                ["rightUpperArmBackAbductedAng"] = "Right Upper Arm (Abduction)",
+                ["leftUpperArmBackAbductedAng"] = "Left Upper Arm (Abduction)",
+                ["rightUpperArmRaisedDist"] = "Right Elbow Height vs Shoulder",
+                ["leftUpperArmRaisedDist"] = "Left Elbow Height vs Shoulder",
+                ["rightHandRaisedOverShoulderDist"] = "Right Hand Height vs Shoulder",
+                ["leftHandRaisedOverShoulderDist"] = "Left Hand Height vs Shoulder",
+
+                // Lower Arms
+                ["rightElbowAng"] = "Right Elbow Flexion",
+                ["leftElbowAng"] = "Left Elbow Flexion",
+                ["rightWristBendAng"] = "Right Wrist Bend (approx)",
+                ["leftWristBendAng"] = "Left Wrist Bend (approx)",
+                ["rightWristAng"] = "Right Wrist Angle (placeholder)",
+                ["leftWristAng"] = "Left Wrist Angle (placeholder)",
+                ["rightWristTwistAng"] = "Right Wrist Twist (placeholder)",
+                ["leftWristTwistAng"] = "Left Wrist Twist (placeholder)",
+
+                // Lower Body
+                ["rKneeAngle"] = "Right Knee Flexion",
+                ["lKneeAngle"] = "Left Knee Flexion",
+                ["rAnkleAngle"] = "Right Ankle Angle",
+                ["lAnkleAngle"] = "Left Ankle Angle",
+            };
+
     }
 }

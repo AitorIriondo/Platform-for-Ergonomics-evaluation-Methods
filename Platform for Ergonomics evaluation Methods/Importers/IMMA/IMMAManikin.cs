@@ -139,13 +139,24 @@ public class IMMAManikin : ManikinBase
         foreach (Joint j in joints)
         {
             jointsByName.Add(j.name, j);
+
             string jIdName = j.name.Replace("_", "");
-            foreach(JointID jId in System.Enum.GetValues(typeof(JointID)))
+            foreach (JointID jId in Enum.GetValues(typeof(JointID)))
             {
-                if(jId.ToString() == jIdName)
+                if (jId.ToString() == jIdName)
                 {
-                    jointIdToNameMap.Add(jId, j.name);
+                    jointIdToNameMap[jId] = j.name;
                 }
+            }
+        }
+
+        // Apply alias map for missing joints
+        var aliasMap = GetImmaJointMap();
+        foreach (var kvp in aliasMap)
+        {
+            if (jointsByName.ContainsKey(kvp.Key) && !jointIdToNameMap.ContainsKey(kvp.Value))
+            {
+                jointIdToNameMap[kvp.Value] = kvp.Key;
             }
         }
 
@@ -200,4 +211,53 @@ public class IMMAManikin : ManikinBase
     {
         return sceneName + " " + operationSequenceName + " " + ipsFamily + " " + name;
     }
+
+    /// <summary>
+    /// Provides explicit aliases from IMMA joint names to JointID enum entries.
+    /// Used when auto-mapping fails.
+    /// </summary>
+    private static Dictionary<string, JointID> GetImmaJointMap()
+    {
+            return new Dictionary<string, JointID>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Spine
+            { "C6C7", JointID.C7T1 },
+            { "T1T2", JointID.T1T2 },   // if your JointID has it
+            { "T6T7", JointID.T6T7 },
+            { "C4C5", JointID.C4C5 },
+            { "AtlantoAxial", JointID.AtlantoAxial },
+
+            // Shoulders
+            { "RightGH", JointID.RightShoulder },
+            { "LeftGH", JointID.LeftShoulder },
+
+            // Wrists
+            { "RightWrist", JointID.RightWrist },
+            { "LeftWrist", JointID.LeftWrist },
+
+            // Elbows
+            { "RightElbow", JointID.RightElbow },
+            { "LeftElbow", JointID.LeftElbow },
+
+            // Hips / Knees / Ankles
+            { "RightHip", JointID.RightHip },
+            { "LeftHip", JointID.LeftHip },
+            { "RightKnee", JointID.RightKnee },
+            { "LeftKnee", JointID.LeftKnee },
+            { "RightAnkle", JointID.RightAnkle },
+            { "LeftAnkle", JointID.LeftAnkle },
+
+            // Fingers (if you need them for wrists)
+            { "Right_MiddleCarpal", JointID.RightMiddleCarpal },
+            { "Right_MiddleProximal", JointID.RightMiddleProximal },
+            { "Left_MiddleCarpal", JointID.LeftMiddleCarpal },
+            { "Left_MiddleProximal", JointID.LeftMiddleProximal },
+            { "Right_IndexCarpal", JointID.RightIndexCarpal },
+            { "Left_IndexCarpal", JointID.LeftIndexCarpal },
+            { "Right_PinkyCarpal", JointID.RightPinkyCarpal },
+            { "Left_PinkyCarpal", JointID.LeftPinkyCarpal },
+            // ...extend with others as needed
+        };
+    }
+
 }

@@ -4,10 +4,9 @@ using System;
 
 namespace PEM.Controllers
 {
-    // MVC controller (serves a view) + keeps an API endpoint for JS
     public class LalController : Controller
     {
-        // GET /Lal  -> returns Views/Lal/Index.cshtml
+        // GET /Lal -> returns Views/Lal/Index.cshtml
         [HttpGet]
         public IActionResult Index()
         {
@@ -16,25 +15,31 @@ namespace PEM.Controllers
 
         /// <summary>
         /// Computes LAL percentiles for the currently loaded manikin.
-        /// Returns: metric -> { p10, p50, p90 }
-        /// Kept under /api/lal/percentiles so your JS can call it.
+        /// Returns JSON: { metric : { p10, p50, p90 } }
         /// </summary>
         [HttpGet("/api/lal/percentiles")]
         public IActionResult GetPercentiles([FromQuery] float dt = 0.1f)
         {
             var manikin = ManikinManager.ActiveManikin;
             if (manikin == null)
-                return BadRequest("No manikin loaded. Import an IMMA/Xsens manikin first.");
+                // ✅ wrap in object so client gets valid JSON
+                return BadRequest(new { error = "No manikin loaded. Import an IMMA/Xsens manikin first." });
 
             try
             {
                 var lal = new Lal();
                 var result = lal.Compute(manikin);
-                return Ok(result);
+                return Ok(result); // ✅ JSON
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                // ✅ include message + stack for debugging
+                return BadRequest(new
+                {
+                    error = ex.Message,
+                    details = ex.GetType().FullName,
+                    stack = ex.StackTrace
+                });
             }
         }
     }

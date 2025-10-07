@@ -86,7 +86,12 @@ public abstract class ManikinBase{
     {
         return Vector3.Zero;
     }
-    
+    public virtual bool TryGetImportedJointAngle(string name, out List<Vector3> series)
+    {
+        series = null;
+        return false;
+    }
+
 
 }
 

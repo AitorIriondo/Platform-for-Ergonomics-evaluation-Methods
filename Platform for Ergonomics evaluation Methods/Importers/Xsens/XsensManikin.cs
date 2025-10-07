@@ -12,6 +12,9 @@ namespace Xsens
     public class XsensManikin : ManikinBase
     {
 
+        public Dictionary<string, List<Vector3>> jointAnglesByName = new();
+        public List<string> jointAngleOrder = new();  // the order of joints in each frame
+
         static string[] parseStrings(XmlElement element, string tagName)
         {
             try
@@ -90,6 +93,7 @@ namespace Xsens
             foreach (XmlNode frameNode in doc.GetElementsByTagName("frame"))
             {
                 XmlElement frame = (XmlElement)frameNode;
+
                 if(frame.GetAttribute("type") == "normal")
                 {
                     List<Vector3> positions = parseVector3s(frame, "position");
@@ -101,6 +105,41 @@ namespace Xsens
                         orderedJoints[i].positions.Add(positions[segIdx]);
                     }
                 }
+
+            }
+
+            XmlNodeList jointAngleNodes = doc.GetElementsByTagName("jointAngle");
+            if (jointAngleNodes.Count > 0)
+            {
+                jointAngleOrder = new List<string>
+                    {
+                        "jL5S1","jL4L3","jL1T12","jT9T8","jT1C7","jC1Head",
+                        "jRightT4Shoulder","jRightShoulder","jRightElbow","jRightWrist",
+                        "jLeftT4Shoulder","jLeftShoulder","jLeftElbow","jLeftWrist",
+                        "jRightHip","jRightKnee","jRightAnkle","jRightBallFoot",
+                        "jLeftHip","jLeftKnee","jLeftAnkle","jLeftBallFoot"
+                    };
+
+                int nJoints = jointAngleOrder.Count;
+
+                // Initialize storage
+                foreach (var jName in jointAngleOrder)
+                    jointAnglesByName[jName] = new List<Vector3>();
+
+                foreach (XmlElement frame in jointAngleNodes)
+                {
+                    List<float> vals = new();
+                    foreach (string s in frame.InnerText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        vals.Add(float.Parse(s, CultureInfo.InvariantCulture));
+
+                    for (int j = 0; j < nJoints; j++)
+                    {
+                        var ang = new Vector3(vals[j * 3], vals[j * 3 + 1], vals[j * 3 + 2]);
+                        jointAnglesByName[jointAngleOrder[j]].Add(ang);
+                    }
+                }
+
+                Debug.Print($"Parsed {jointAnglesByName.Count} joint angle series ({jointAnglesByName.First().Value.Count} frames each)");
             }
 
             jointIdToNameMap.Add(JointID.L5S1, "jL5S1");
@@ -173,7 +212,21 @@ namespace Xsens
             
         }
 
+        public override bool TryGetImportedJointAngle(string name, out List<Vector3> series)
+        {
+            if (jointAnglesByName.TryGetValue(name, out series))
+                return true;
+            return false;
+        }
 
+        public bool TryGetJointAngle(string jointName, int frameIdx, out Vector3 euler)
+        {
+            euler = Vector3.Zero;
+            if (!jointAnglesByName.TryGetValue(jointName, out var list)) return false;
+            if (frameIdx < 0 || frameIdx >= list.Count) return false;
+            euler = list[frameIdx];
+            return true;
+        }
         public override List<Limb> GetLimbs()
         {
             List<Limb> limbList = new List<Limb>();
