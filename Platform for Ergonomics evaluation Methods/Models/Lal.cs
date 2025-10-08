@@ -22,8 +22,10 @@ namespace PEM.Models
             var headFlex = dict.TryGetValue("neckAng", out var hf) ? hf : new List<double>();
             var uaLeft = dict.TryGetValue("leftUpperArmBackAng", out var ul) ? ul : new List<double>();
             var uaRight = dict.TryGetValue("rightUpperArmBackAng", out var ur) ? ur : new List<double>();
-            var wrLeft = dict.TryGetValue("leftWristAng", out var wl) ? wl : new List<double>();
-            var wrRight = dict.TryGetValue("rightWristAng", out var wr) ? wr : new List<double>();
+            var wrLeft = GetImportedFlexion(manikin, "LeftWrist", "jLeftWrist")
+             ?? (dict.TryGetValue("leftWristAng", out var wl) ? wl : new List<double>());
+            var wrRight = GetImportedFlexion(manikin, "RightWrist", "jRightWrist")
+                         ?? (dict.TryGetValue("rightWristAng", out var wr) ? wr : new List<double>());
 
             // --- Velocities (assume fixed Δt = 1/60) ---
             const double dt = 1.0 / 60.0;
@@ -87,5 +89,19 @@ namespace PEM.Models
             double f = pos - lo;
             return sortedValues[lo] * (1 - f) + sortedValues[hi] * f;
         }
+
+        private static List<double>? GetImportedFlexion(ManikinBase manikin, params string[] jointNames)
+        {
+            foreach (var name in jointNames)
+            {
+                if (manikin.TryGetImportedJointAngle(name, out var v3Series) && v3Series != null && v3Series.Count > 0)
+                {
+                    // Flexion/extension → assume X is index 0; adjust if needed
+                    return v3Series.Select(v => (double)v.X).ToList();
+                }
+            }
+            return null;
+        }
+
     }
 }
