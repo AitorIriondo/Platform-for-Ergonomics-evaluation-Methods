@@ -32,6 +32,8 @@ namespace PEM.Models
         public readonly List<double> leftUpperArmRaisedDist = new();
         public readonly List<double> rightHandRaisedOverShoulderDist = new();
         public readonly List<double> leftHandRaisedOverShoulderDist = new();
+        public readonly List<double> rightUpperArmToVerticalAng = new();
+        public readonly List<double> leftUpperArmToVerticalAng = new();
 
         // Lower Arm
         public readonly List<double> rightElbowAng = new();
@@ -49,6 +51,8 @@ namespace PEM.Models
         public readonly List<double> rAnkleAngle = new();
         public readonly List<double> lAnkleAngle = new();
 
+        private readonly List<Vector3>? xsensC1HeadAngles;
+
         public ManikinCriterias(ManikinBase manikin)
         {
             if (manikin.postureTimeSteps == null || manikin.postureTimeSteps.Count == 0)
@@ -56,6 +60,11 @@ namespace PEM.Models
             Time.AddRange(manikin.postureTimeSteps);
 
             V = new ManikinVectors(manikin);
+
+            //Temp fix
+            if (manikin.TryGetImportedJointAngle("jC1Head", out var series))
+                xsensC1HeadAngles = series;
+
             ComputeBackAndNeck();
             ComputeUpperArms();
             ComputeLowerArms();
@@ -90,10 +99,16 @@ namespace PEM.Models
                 var projUpFront = ManikinVectors.ProjectOnPlane(up, frontN);
                 backBendAng.Add(ManikinVectors.AngleDeg(projSpineFront, projUpFront));
 
-                // Neck angles — approximations (no eyes/head joints in current loaders)
-                neckAng.Add(backAng[i]);
-                neckBendAng.Add(backBendAng[i]);
-                neckTwistAng.Add(backTwistAng[i]);
+                // --- Neck angles (relative to trunk/spine) ---
+                var neckVec = V.upperBackToNeck[i];
+
+                // Flex/Ext: neck vs spine in sagittal plane
+                var projNeckSag = ManikinVectors.ProjectOnPlane(neckVec, sagN);
+                neckAng.Add(ManikinVectors.AngleDeg(projNeckSag, projSpineSag));
+
+                // Lateral bend: neck vs spine in frontal plane
+                var projNeckFront = ManikinVectors.ProjectOnPlane(neckVec, frontN);
+                neckBendAng.Add(ManikinVectors.AngleDeg(projNeckFront, projSpineFront));
             }
         }
 
@@ -131,6 +146,11 @@ namespace PEM.Models
                 var rSh = V.rightShoulderPos[i]; var lSh = V.leftShoulderPos[i];
                 var rEl = V.rightElbowPos[i]; var lEl = V.leftElbowPos[i];
                 var rWr = V.rightWristPos[i]; var lWr = V.leftWristPos[i];
+
+                //Against vertical (LAL)
+                var up = new Vector3(0, 0, 1); // vertical reference
+                rightUpperArmToVerticalAng.Add(ManikinVectors.AngleDeg(rArm, up));
+                leftUpperArmToVerticalAng.Add(ManikinVectors.AngleDeg(lArm, up));
 
                 rightUpperArmRaisedDist.Add(rEl.Z - rSh.Z);
                 leftUpperArmRaisedDist.Add(lEl.Z - lSh.Z);
@@ -216,6 +236,8 @@ namespace PEM.Models
                 [nameof(leftUpperArmRaisedDist)] = leftUpperArmRaisedDist,
                 [nameof(rightHandRaisedOverShoulderDist)] = rightHandRaisedOverShoulderDist,
                 [nameof(leftHandRaisedOverShoulderDist)] = leftHandRaisedOverShoulderDist,
+                [nameof(rightUpperArmToVerticalAng)] = rightUpperArmToVerticalAng,
+                [nameof(leftUpperArmToVerticalAng)] = leftUpperArmToVerticalAng,
 
                 // Lower arms
                 [nameof(rightElbowAng)] = rightElbowAng,
@@ -242,9 +264,9 @@ namespace PEM.Models
                 ["backAng"] = "Back Flexion/Extension (Sagittal)",
                 ["backTwistAng"] = "Back Axial Rotation (Twist)",
                 ["backBendAng"] = "Back Lateral Bending (Frontal)",
-                ["neckAng"] = "Neck Flexion/Extension (approx)",
-                ["neckBendAng"] = "Neck Lateral Bending (approx)",
-                ["neckTwistAng"] = "Neck Axial Rotation (approx)",
+                ["neckAng"] = "Neck Flexion/Extension",
+                ["neckBendAng"] = "Neck Lateral Bending",
+                ["neckTwistAng"] = "Neck Axial Rotation",
 
                 // Upper Arms
                 ["rightUpperArmBackAng"] = "Right Upper Arm vs Spine",
@@ -257,6 +279,8 @@ namespace PEM.Models
                 ["leftUpperArmRaisedDist"] = "Left Elbow Height vs Shoulder",
                 ["rightHandRaisedOverShoulderDist"] = "Right Hand Height vs Shoulder",
                 ["leftHandRaisedOverShoulderDist"] = "Left Hand Height vs Shoulder",
+                ["rightUpperArmToVerticalAng"] = "Right Upper Arm to Vertical",
+                ["leftUpperArmToVerticalAng"] = "Left Upper Arm to Vertical",
 
                 // Lower Arms
                 ["rightElbowAng"] = "Right Elbow Flexion",

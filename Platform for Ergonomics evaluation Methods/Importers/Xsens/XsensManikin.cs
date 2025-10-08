@@ -148,6 +148,7 @@ namespace Xsens
             MapJointSmart(JointID.L3L4, "L3L4", "L4L3");
             MapJointSmart(JointID.T12L1, "T12L1", "L1T12");
             MapJointSmart(JointID.C7T1, "C7T1", "T1C7");
+            MapJointSmart(JointID.AtlantoAxial, "C1Head");   // jC1Head → upper cervical
 
             MapJointSmart(JointID.RightShoulder, "RightShoulder");
             MapJointSmart(JointID.RightElbow, "RightElbow");

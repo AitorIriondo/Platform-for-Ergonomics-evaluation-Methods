@@ -24,6 +24,8 @@ namespace PEM.Models
         public readonly List<Vector3> leftAnklePos = new();
         public readonly List<Vector3> uppBackPos = new(); // C7T1
         public readonly List<Vector3> lowBackPos = new(); // L5S1
+        public readonly List<Vector3> neckPos = new();
+        public readonly List<Vector3> headPos = new();
 
         // Centers
         public readonly List<Vector3> ctrShoulderTrans = new();
@@ -43,6 +45,9 @@ namespace PEM.Models
         public readonly List<Vector3> leftKneeToLeftHip = new();
         public readonly List<Vector3> rightAnkleToRightKnee = new();
         public readonly List<Vector3> leftAnkleToLeftKnee = new();
+        public readonly List<Vector3> upperBackToNeck = new();
+        public readonly List<Vector3> neckToHead = new();
+        public readonly List<Vector3> shoulderCenterToHead = new();
 
         // Optional foot vectors (ankle -> toes), only filled if available
         public readonly List<Vector3> rightAnkleToRightFoot = new();
@@ -81,6 +86,7 @@ namespace PEM.Models
                       manikin.TryGetJointPosition(JointID.LeftHip, out var lHip) &&
                       manikin.TryGetJointPosition(JointID.RightKnee, out var rKn) &&
                       manikin.TryGetJointPosition(JointID.LeftKnee, out var lKn) &&
+                      manikin.TryGetJointPosition(JointID.AtlantoAxial, out var c1) &&
                       manikin.TryGetJointPosition(JointID.RightAnkle, out var rAn) &&
                       manikin.TryGetJointPosition(JointID.LeftAnkle, out var lAn)))
                 {
@@ -95,6 +101,8 @@ namespace PEM.Models
                 rightKneePos.Add(rKn); leftKneePos.Add(lKn);
                 rightAnklePos.Add(rAn); leftAnklePos.Add(lAn);
                 uppBackPos.Add(c7); lowBackPos.Add(l5s1);
+                neckPos.Add(c1); headPos.Add(c1);
+
 
                 // centers
                 ctrShoulderTrans.Add((rSh + lSh) * 0.5f);
@@ -114,6 +122,15 @@ namespace PEM.Models
                 leftKneeToLeftHip.Add(lHip - lKn);
                 rightAnkleToRightKnee.Add(rKn - rAn);
                 leftAnkleToLeftKnee.Add(lKn - lAn);
+                upperBackToNeck.Add(c1 - c7);
+
+                // We don't have a separate head landmark in Xsens positions;
+                // keep a valid list but equal to zero vector (unused by angles below).
+                neckToHead.Add(Vector3.Zero);
+
+                // (Optional) Shoulder-center-to-"head" vector; we set it to C1Head for now.
+                var midShoulder = (rSh + lSh) * 0.5f;
+                shoulderCenterToHead.Add(c1 - midShoulder);
 
                 // optional foot (ankle->toes) if your loader provides them
                 if (manikin.TryGetJointPosition(JointID.RightToes, out var rToes))

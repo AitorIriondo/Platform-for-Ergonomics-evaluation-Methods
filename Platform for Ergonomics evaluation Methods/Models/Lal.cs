@@ -20,12 +20,12 @@ namespace PEM.Models
 
             // --- Extract the angles we need ---
             var headFlex = dict.TryGetValue("neckAng", out var hf) ? hf : new List<double>();
-            var uaLeft = dict.TryGetValue("leftUpperArmBackAng", out var ul) ? ul : new List<double>();
-            var uaRight = dict.TryGetValue("rightUpperArmBackAng", out var ur) ? ur : new List<double>();
+            var uaLeft = dict.TryGetValue("leftUpperArmToVerticalAng", out var ul) ? ul : new List<double>();
+            var uaRight = dict.TryGetValue("rightUpperArmToVerticalAng", out var ur) ? ur : new List<double>();
             var wrLeft = GetImportedFlexion(manikin, "LeftWrist", "jLeftWrist")
              ?? (dict.TryGetValue("leftWristAng", out var wl) ? wl : new List<double>());
             var wrRight = GetImportedFlexion(manikin, "RightWrist", "jRightWrist")
-                         ?? (dict.TryGetValue("rightWristAng", out var wr) ? wr : new List<double>());
+             ?? (dict.TryGetValue("rightWristAng", out var wr) ? wr : new List<double>());
 
             // --- Velocities (assume fixed Δt = 1/60) ---
             const double dt = 1.0 / 60.0;
