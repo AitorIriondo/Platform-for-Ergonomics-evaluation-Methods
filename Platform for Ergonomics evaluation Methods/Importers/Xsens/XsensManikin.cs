@@ -90,6 +90,9 @@ namespace Xsens
                 Debug.Print($"Segment label:{label}");
             }
             Debug.Print($"Segment label cnt:{segmentLabels.Count}");
+
+            var timeStepsRaw = new List<float>();
+
             foreach (XmlNode frameNode in doc.GetElementsByTagName("frame"))
             {
                 XmlElement frame = (XmlElement)frameNode;
@@ -97,7 +100,11 @@ namespace Xsens
                 if(frame.GetAttribute("type") == "normal")
                 {
                     List<Vector3> positions = parseVector3s(frame, "position");
-                    postureTimeSteps.Add(float.Parse(frame.GetAttribute("time")) / 1000);
+
+                    // Parse with invariant culture and store as seconds
+                    var tSec = float.Parse(frame.GetAttribute("time"), CultureInfo.InvariantCulture) / 1000f;
+                    timeStepsRaw.Add(tSec);
+
                     for (int i = 0; i < orderedJoints.Count; i++)
                     {
                         string segName = ((XmlElement)xmlJoints[i]).GetElementsByTagName("connector2")[0].InnerText.Split("/")[0];
@@ -106,6 +113,14 @@ namespace Xsens
                     }
                 }
 
+            }
+
+            // Normalize so the first frame is time = 0
+            if (timeStepsRaw.Count > 0)
+            {
+                var t0 = timeStepsRaw[0];
+                for (int i = 0; i < timeStepsRaw.Count; i++)
+                    postureTimeSteps.Add(timeStepsRaw[i] - t0);
             }
 
             XmlNodeList jointAngleNodes = doc.GetElementsByTagName("jointAngle");
