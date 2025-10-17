@@ -61,6 +61,11 @@
     <button id="addSeriesBtn" class="btn btn-primary">Add</button>
 </div>
 
+<button id="xDragReset" type="button" class="btn btn-sm btn-outline-secondary">
+    Reset Zoom
+</button>
+
+
 <div class="series-list" id="seriesList"></div>
 
 <div class="chart-wrap">
@@ -68,6 +73,20 @@
 </div>
 <button id="downloadCsvBtn" class="btn btn-secondary">Download CSV</button>
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="~/js/angles.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+    <script>
+        (function () {
+            const plug =
+                window.ChartZoom ||
+                (window['chartjs-plugin-zoom'] && window['chartjs-plugin-zoom'].default) ||
+                window['chartjs-plugin-zoom'];
+            if (window.Chart && plug) {
+                Chart.register(plug);
+            }
+        })();
+    </script>
+
+    <script src="~/js/angles.js" asp-append-version="true"></script>
+
 }

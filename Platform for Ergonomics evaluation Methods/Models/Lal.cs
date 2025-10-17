@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 
 namespace PEM.Models
 {
@@ -19,7 +20,10 @@ namespace PEM.Models
             var dict = crit.ToSeriesDictionary();
 
             // --- Extract the angles we need ---
-            var headFlex = dict.TryGetValue("neckAng", out var hf) ? hf : new List<double>();
+            //var headFlex = dict.TryGetValue("neckAng", out var hf) ? hf : new List<double>();
+            //Change for neck angle, using imported instead
+            var headFlex = dict.TryGetValue("t1c7c1HeadAng", out var hf) ? hf : new List<double>();
+
             var uaLeft = dict.TryGetValue("leftUpperArmToVerticalAng", out var ul) ? ul : new List<double>();
             var uaRight = dict.TryGetValue("rightUpperArmToVerticalAng", out var ur) ? ur : new List<double>();
             var wrLeft = GetImportedFlexion(manikin, "LeftWrist", "jLeftWrist")

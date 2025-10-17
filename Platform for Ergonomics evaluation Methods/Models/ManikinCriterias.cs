@@ -20,6 +20,7 @@ namespace PEM.Models
         public readonly List<double> neckAng = new();         // approx. (no head joints in current loaders)
         public readonly List<double> neckBendAng = new();
         public readonly List<double> neckTwistAng = new();
+        public readonly List<double> t1c7c1HeadAng = new();
 
         // Upper Arm
         public readonly List<double> rightUpperArmBackAng = new();
@@ -64,6 +65,19 @@ namespace PEM.Models
             //Temp fix
             if (manikin.TryGetImportedJointAngle("jC1Head", out var series))
                 xsensC1HeadAngles = series;
+
+            // --- Combined T1C7 + C1Head flexion (from imported Xsens joint angles) ---
+            if (manikin.TryGetImportedJointAngle("jT1C7", out var t1c7Series) &&
+                manikin.TryGetImportedJointAngle("jC1Head", out var c1HeadSeries))
+            {
+                int n = Math.Min(t1c7Series.Count, c1HeadSeries.Count);
+                for (int i = 0; i < n; i++)
+                {
+                    // Xsens convention: Z = Flex/Ext, X = Lateral Bend, Y = Axial Rotation
+                    double flexExt = t1c7Series[i].Z + c1HeadSeries[i].Z;
+                    t1c7c1HeadAng.Add(flexExt);
+                }
+            }
 
             ComputeBackAndNeck();
             ComputeUpperArms();
@@ -224,6 +238,7 @@ namespace PEM.Models
                 [nameof(neckAng)] = neckAng,
                 [nameof(neckBendAng)] = neckBendAng,
                 [nameof(neckTwistAng)] = neckTwistAng,
+                [nameof(t1c7c1HeadAng)] = t1c7c1HeadAng,
 
                 // Upper arms
                 [nameof(rightUpperArmBackAng)] = rightUpperArmBackAng,
@@ -267,6 +282,7 @@ namespace PEM.Models
                 ["neckAng"] = "Neck Flexion/Extension",
                 ["neckBendAng"] = "Neck Lateral Bending",
                 ["neckTwistAng"] = "Neck Axial Rotation",
+                ["t1c7c1HeadAng"] = "Neck Flexion/Extension (T1C7 + C1Head)",
 
                 // Upper Arms
                 ["rightUpperArmBackAng"] = "Right Upper Arm vs Spine",

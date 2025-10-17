@@ -10,6 +10,8 @@ const COLOR_PALETTE = [
     "#808080", "#000000"
 ];
 
+let xMinEl = null, xMaxEl = null, xLabelEl = null;
+
 function nextColor(i) { return COLOR_PALETTE[i % COLOR_PALETTE.length]; }
 
 // ===== Utilities =====
@@ -118,12 +120,41 @@ function ensureChart() {
         options: {
             responsive: true,
             elements: { point: { radius: 0, hoverRadius: 0, hitRadius: 0 } },
-            plugins: { decimation: { enabled: true, algorithm: 'lttb', samples: 1200 } },
+            plugins: {
+                decimation: { enabled: true, algorithm: 'lttb', samples: 1200 },
+                zoom: {
+                    zoom: {
+                        drag: {
+                            enabled: true,
+                            backgroundColor: 'rgba(0,0,0,0.12)',
+                            borderColor: 'rgba(0,0,0,0.4)',
+                            borderWidth: 1,
+                            threshold: 2
+                        },
+                        mode: 'x'
+                    },
+                    pan: { enabled: false },
+                    wheel: { enabled: false },
+                    pinch: { enabled: false },
+                    onZoomComplete: ({ chart }) => {
+                        const s = chart.scales.x;
+                        if (typeof s.min === 'number' && typeof s.max === 'number') {
+                            // keep the dual sliders in sync if you're using them
+                            if (window.xMinEl && window.xMaxEl) {
+                                xMinEl.value = String(s.min);
+                                xMaxEl.value = String(s.max);
+                            }
+                            if (typeof updateXRangeLabel === 'function') updateXRangeLabel();
+                        }
+                    }
+                }
+            },
             scales: {
-                x: { title: { display: true, text: 'Time (s)' } },
+                x: { type: 'category', title: { display: true, text: 'Time (s)' } },
                 y: { title: { display: true, text: 'Angle (deg)' } }
             }
         }
+
     });
 }
 
@@ -208,6 +239,15 @@ async function onAddClick() {
         const series = await fetchSeries(manSel.value, angSel.value);
         ensureChart();
 
+        document.getElementById('xDragReset')?.addEventListener('click', () => {
+            if (!anglesChart) return;
+            anglesChart.resetZoom();                 // clear min/max on X
+
+            // if you keep the dual sliders, refresh them too:
+            initXRangeUI?.refreshDomain?.();
+            updateXRangeLabel?.();
+        });
+
         // If no X axis yet OR this series is longer, adopt it
         if (!currentXAxis || series.time.length > currentXAxis.length) {
             currentXAxis = series.time.slice();
@@ -222,6 +262,8 @@ async function onAddClick() {
                 }
             }
         }
+        initXRangeUI?.refreshDomain?.();
+        updateXRangeLabel();
 
         // Prepare Y data with null padding
         let y = series.values.slice();
@@ -278,11 +320,88 @@ function downloadCsv() {
 
 document.getElementById("downloadCsvBtn")?.addEventListener("click", downloadCsv);
 
+function setXAxisView(idxMin, idxMax) {
+    if (!anglesChart || !currentXAxis || currentXAxis.length === 0) return;
+
+    // clamp and floor to integers
+    idxMin = Math.max(0, Math.min(currentXAxis.length - 1, Math.floor(idxMin)));
+    idxMax = Math.max(idxMin, Math.min(currentXAxis.length - 1, Math.floor(idxMax)));
+
+    const xScale = anglesChart.options.scales.x || (anglesChart.options.scales.x = { type: 'category' });
+    xScale.min = idxMin;   // indices for category scale
+    xScale.max = idxMax;
+
+    anglesChart.update('none');
+    updateXRangeLabel();
+}
+
+
+function updateXRangeLabel() {
+    if (!xLabelEl || !currentXAxis || currentXAxis.length === 0) return;
+
+    const xScale = anglesChart?.options?.scales?.x || {};
+    const fullMinIdx = 0;
+    const fullMaxIdx = currentXAxis.length - 1;
+
+    const vminIdx = (typeof xScale.min === 'number') ? xScale.min : fullMinIdx;
+    const vmaxIdx = (typeof xScale.max === 'number') ? xScale.max : fullMaxIdx;
+
+    const fullMin = +currentXAxis[fullMinIdx];
+    const fullMax = +currentXAxis[fullMaxIdx];
+    const vmin = +currentXAxis[vminIdx];
+    const vmax = +currentXAxis[vmaxIdx];
+
+    xLabelEl.textContent =
+        `showing [${vminIdx}…${vmaxIdx}] => ${vmin.toFixed(3)} → ${vmax.toFixed(3)} ` +
+        `(full: 0…${fullMaxIdx} => ${fullMin.toFixed(3)} → ${fullMax.toFixed(3)})`;
+}
+
+
+
+function initXRangeUI() {
+    xMinEl = document.getElementById('xMin');
+    xMaxEl = document.getElementById('xMax');
+    xLabelEl = document.getElementById('xRangeLabel');
+
+    if (!xMinEl || !xMaxEl) return;
+
+    const setDomainFromAxis = () => {
+        if (!currentXAxis || currentXAxis.length < 2) return;
+        const loIdx = 0;
+        const hiIdx = currentXAxis.length - 1;
+
+        xMinEl.min = loIdx; xMinEl.max = hiIdx; xMinEl.step = 1; xMinEl.value = loIdx;
+        xMaxEl.min = loIdx; xMaxEl.max = hiIdx; xMaxEl.step = 1; xMaxEl.value = hiIdx;
+
+        setXAxisView(loIdx, hiIdx); // reset to full view
+    };
+
+    const onMinInput = () => {
+        let minIdx = +xMinEl.value, maxIdx = +xMaxEl.value;
+        if (minIdx > maxIdx) { maxIdx = minIdx; xMaxEl.value = String(maxIdx); }
+        setXAxisView(minIdx, maxIdx);
+    };
+    const onMaxInput = () => {
+        let minIdx = +xMinEl.value, maxIdx = +xMaxEl.value;
+        if (maxIdx < minIdx) { minIdx = maxIdx; xMinEl.value = String(minIdx); }
+        setXAxisView(minIdx, maxIdx);
+    };
+
+    xMinEl.addEventListener('input', onMinInput);
+    xMaxEl.addEventListener('input', onMaxInput);
+    document.getElementById('xRangeReset')?.addEventListener('click', setDomainFromAxis);
+
+    initXRangeUI.refreshDomain = setDomainFromAxis;
+}
+
+
+
 
 // ===== Bootstrap =====
 document.addEventListener('DOMContentLoaded', async () => {
     await populateSelectors();
     ensureChart();
+    initXRangeUI();
 
     const btn = document.getElementById('addSeriesBtn');
     if (btn) btn.addEventListener('click', onAddClick);

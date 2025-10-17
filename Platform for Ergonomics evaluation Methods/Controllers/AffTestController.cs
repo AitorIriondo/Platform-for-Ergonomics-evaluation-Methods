@@ -154,7 +154,7 @@ namespace PEM.Controllers
 
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 
-                // ✅ Use the real recorded timeline instead of fixed 0.1 s steps
+                // Use the real recorded timeline instead of fixed 0.1 s steps
                 var timeline = manikin.postureTimeSteps;
                 if (timeline == null || timeline.Count == 0)
                 {
