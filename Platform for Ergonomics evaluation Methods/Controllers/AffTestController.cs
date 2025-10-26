@@ -135,7 +135,7 @@ namespace PEM.Controllers
             MafParams? mafParams = mafParamsJson != null ? JsonConvert.DeserializeObject<MafParams>(mafParamsJson) : null;
             AdditionalForce[]? additionalForces = JsonConvert.DeserializeObject<AdditionalForce[]>(additionalForcesJson);
             try {
-                ManikinBase? manikin = ManikinManager.loadedManikin;
+                ManikinBase? manikin = ManikinManager.ActiveManikin;
                 if (manikin == null)
                 {
                     return BadRequest();
@@ -143,10 +143,8 @@ namespace PEM.Controllers
                 List<string> messages = new List<string>();
                 messages.Add("maxAcceptableForce = masWithGravity * maxAcceptableEffort;");
                 List<float> timestamps = new List<float>();
-                float t = 0;
-                int frame = 0;
                 bool includeProbability = true;
-                bool useMaf = mafParams!=null;
+                bool useMaf = mafParams != null;
                 List<float>[] vals = new List<float>[2 * (includeProbability ? 3 : 2)];
                 List<string> affJsons = new List<string>();
                 for (int i = 0; i < vals.Length; i++)
@@ -155,19 +153,40 @@ namespace PEM.Controllers
                 }
 
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                while (t < manikin.GetTimelineDuration())
+
+                // Use the real recorded timeline instead of fixed 0.1 s steps
+                var timeline = manikin.postureTimeSteps;
+                if (timeline == null || timeline.Count == 0)
+                {
+                    // fallback to legacy behavior if timeline is missing
+                    timeline = new List<float>();
+                    float t = 0;
+                    while (t < manikin.GetTimelineDuration())
+                    {
+                        timeline.Add(t);
+                        t += 0.1f;
+                    }
+                }
+
+                // iterate all real timestamps
+                foreach (var t in timeline)
                 {
                     timestamps.Add(t);
                     manikin.SetTime(t);
+
                     Aff aff = new Aff();
                     aff.input = GetAffInput(manikin, messages);
                     string extraJson = ", \"extra\":{\"additionalForcesJson\":" + additionalForcesJson;
-                    if (additionalForces != null) {
-                        for (int i = 0; i < additionalForces.Length; i++) {
+
+                    if (additionalForces != null)
+                    {
+                        for (int i = 0; i < additionalForces.Length; i++)
+                        {
                             var additionalForce = additionalForces[i];
                             string side = i == 0 ? "left" : "right";
                             var arm = i == 0 ? aff.input.left : aff.input.right;
-                            if (additionalForce.isValid && additionalForce.containsTime(t)) {
+                            if (additionalForce.isValid && additionalForce.containsTime(t))
+                            {
                                 extraJson += $", \"{side}.orgForceDir\":{JsonConvert.SerializeObject(arm.forceDirection)},";
                                 extraJson += $"\"{side}.orgActualLoad\":{JsonConvert.SerializeObject(arm.actualLoad)},";
                                 Vector3 orgForceVector = arm.forceDirection * arm.actualLoad;
@@ -184,20 +203,25 @@ namespace PEM.Controllers
                             }
                         }
                     }
+
                     if (altGender != "")
                     {
                         aff.input.female = altGender.ToUpper() != "MALE";
                     }
-                    if(mafParams != null) {
-                        for(int i = 0; i < 2; i++) {
+                    if (mafParams != null)
+                    {
+                        for (int i = 0; i < 2; i++)
+                        {
                             (i == 0 ? aff.input.left : aff.input.right).freqEffortsPerDay = mafParams.freqEffortsPerDay[i];
                             (i == 0 ? aff.input.left : aff.input.right).effDurPerEffortSec = mafParams.effDurPerEffortSec[i];
                         }
                     }
+
                     aff.input.percentCapable = percentCapable;
                     aff.input.left.actualLoad *= demoLoadPercent / 100;
                     aff.input.right.actualLoad *= demoLoadPercent / 100;
                     aff.Calculate();
+
                     int arrIdx = 0;
                     for (int i = 0; i < 2; i++)
                     {
@@ -209,11 +233,12 @@ namespace PEM.Controllers
                             vals[arrIdx++].Add(arm.masProbabilityPercent);
                         }
                     }
+
                     string json = JsonConvert.SerializeObject(aff, Formatting.Indented);
-                    json = json.Insert(json.Length - 2,extraJson+"}");
+                    json = json.Insert(json.Length - 2, extraJson + "}");
                     affJsons.Add(json);
-                    t = ++frame * .1f;
                 }
+
                 //Debug.WriteLine(vals[1].Count);
                 List<string> labels = new List<string>(){
                     "Demand (N)",

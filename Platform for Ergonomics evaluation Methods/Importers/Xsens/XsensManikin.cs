@@ -12,6 +12,9 @@ namespace Xsens
     public class XsensManikin : ManikinBase
     {
 
+        public Dictionary<string, List<Vector3>> jointAnglesByName = new();
+        public List<string> jointAngleOrder = new();  // the order of joints in each frame
+
         static string[] parseStrings(XmlElement element, string tagName)
         {
             try
@@ -87,13 +90,21 @@ namespace Xsens
                 Debug.Print($"Segment label:{label}");
             }
             Debug.Print($"Segment label cnt:{segmentLabels.Count}");
+
+            var timeStepsRaw = new List<float>();
+
             foreach (XmlNode frameNode in doc.GetElementsByTagName("frame"))
             {
                 XmlElement frame = (XmlElement)frameNode;
+
                 if(frame.GetAttribute("type") == "normal")
                 {
                     List<Vector3> positions = parseVector3s(frame, "position");
-                    postureTimeSteps.Add(float.Parse(frame.GetAttribute("time")) / 1000);
+
+                    // Parse with invariant culture and store as seconds
+                    var tSec = float.Parse(frame.GetAttribute("time"), CultureInfo.InvariantCulture) / 1000f;
+                    timeStepsRaw.Add(tSec);
+
                     for (int i = 0; i < orderedJoints.Count; i++)
                     {
                         string segName = ((XmlElement)xmlJoints[i]).GetElementsByTagName("connector2")[0].InnerText.Split("/")[0];
@@ -101,25 +112,74 @@ namespace Xsens
                         orderedJoints[i].positions.Add(positions[segIdx]);
                     }
                 }
+
             }
 
-            jointIdToNameMap.Add(JointID.L5S1, "jL5S1");
-            jointIdToNameMap.Add(JointID.L3L4, "jL4L3");
-            jointIdToNameMap.Add(JointID.T12L1, "jL1T12");
-            jointIdToNameMap.Add(JointID.C7T1, "jT1C7");
-            jointIdToNameMap.Add(JointID.RightShoulder, "jRightShoulder");
-            jointIdToNameMap.Add(JointID.RightElbow, "jRightElbow");
-            jointIdToNameMap.Add(JointID.RightWrist, "jRightWrist");
-            jointIdToNameMap.Add(JointID.LeftShoulder, "jLeftShoulder");
-            jointIdToNameMap.Add(JointID.LeftElbow, "jLeftElbow");
-            jointIdToNameMap.Add(JointID.LeftWrist, "jLeftWrist");
-            jointIdToNameMap.Add(JointID.RightHip, "jRightHip");
-            jointIdToNameMap.Add(JointID.RightKnee, "jRightKnee");
-            jointIdToNameMap.Add(JointID.RightAnkle, "jRightAnkle");
-            jointIdToNameMap.Add(JointID.LeftHip, "jLeftHip");
-            jointIdToNameMap.Add(JointID.LeftKnee, "jLeftKnee");
-            jointIdToNameMap.Add(JointID.LeftAnkle, "jLeftAnkle");
-            
+            // Normalize so the first frame is time = 0
+            if (timeStepsRaw.Count > 0)
+            {
+                var t0 = timeStepsRaw[0];
+                for (int i = 0; i < timeStepsRaw.Count; i++)
+                    postureTimeSteps.Add(timeStepsRaw[i] - t0);
+            }
+
+            XmlNodeList jointAngleNodes = doc.GetElementsByTagName("jointAngle");
+            if (jointAngleNodes.Count > 0)
+            {
+                jointAngleOrder = new List<string>
+                    {
+                        "jL5S1","jL4L3","jL1T12","jT9T8","jT1C7","jC1Head",
+                        "jRightT4Shoulder","jRightShoulder","jRightElbow","jRightWrist",
+                        "jLeftT4Shoulder","jLeftShoulder","jLeftElbow","jLeftWrist",
+                        "jRightHip","jRightKnee","jRightAnkle","jRightBallFoot",
+                        "jLeftHip","jLeftKnee","jLeftAnkle","jLeftBallFoot"
+                    };
+
+                int nJoints = jointAngleOrder.Count;
+
+                // Initialize storage
+                foreach (var jName in jointAngleOrder)
+                    jointAnglesByName[jName] = new List<Vector3>();
+
+                foreach (XmlElement frame in jointAngleNodes)
+                {
+                    List<float> vals = new();
+                    foreach (string s in frame.InnerText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                        vals.Add(float.Parse(s, CultureInfo.InvariantCulture));
+
+                    for (int j = 0; j < nJoints; j++)
+                    {
+                        var ang = new Vector3(vals[j * 3], vals[j * 3 + 1], vals[j * 3 + 2]);
+                        jointAnglesByName[jointAngleOrder[j]].Add(ang);
+                    }
+                }
+
+                Debug.Print($"Parsed {jointAnglesByName.Count} joint angle series ({jointAnglesByName.First().Value.Count} frames each)");
+            }
+
+            // Robust mappings that accept both legacy "j*" and newer plain labels,
+            // plus common flipped-pair aliases.
+            MapJointSmart(JointID.L5S1, "L5S1");
+            MapJointSmart(JointID.L3L4, "L3L4", "L4L3");
+            MapJointSmart(JointID.T12L1, "T12L1", "L1T12");
+            MapJointSmart(JointID.C7T1, "C7T1", "T1C7");
+            MapJointSmart(JointID.AtlantoAxial, "C1Head");   // jC1Head → upper cervical
+
+            MapJointSmart(JointID.RightShoulder, "RightShoulder");
+            MapJointSmart(JointID.RightElbow, "RightElbow");
+            MapJointSmart(JointID.RightWrist, "RightWrist");
+            MapJointSmart(JointID.LeftShoulder, "LeftShoulder");
+            MapJointSmart(JointID.LeftElbow, "LeftElbow");
+            MapJointSmart(JointID.LeftWrist, "LeftWrist");
+
+            MapJointSmart(JointID.RightHip, "RightHip");
+            MapJointSmart(JointID.RightKnee, "RightKnee");
+            MapJointSmart(JointID.RightAnkle, "RightAnkle");
+            MapJointSmart(JointID.LeftHip, "LeftHip");
+            MapJointSmart(JointID.LeftKnee, "LeftKnee");
+            MapJointSmart(JointID.LeftAnkle, "LeftAnkle");
+
+
             Debug.WriteLine(GetJointPosition(JointID.LeftElbow));
         }
         [System.Serializable]
@@ -157,7 +217,9 @@ namespace Xsens
         }
         public override bool HasJoint(JointID jointID)
         {
-            return jointIdToNameMap.ContainsKey(jointID);
+            return jointIdToNameMap.TryGetValue(jointID, out var label)
+                && !string.IsNullOrWhiteSpace(label)
+                && jointsByName.ContainsKey(label);
         }
         public override Vector3 GetJointPosition(JointID jointID)
         {
@@ -173,7 +235,21 @@ namespace Xsens
             
         }
 
+        public override bool TryGetImportedJointAngle(string name, out List<Vector3> series)
+        {
+            if (jointAnglesByName.TryGetValue(name, out series))
+                return true;
+            return false;
+        }
 
+        public bool TryGetJointAngle(string jointName, int frameIdx, out Vector3 euler)
+        {
+            euler = Vector3.Zero;
+            if (!jointAnglesByName.TryGetValue(jointName, out var list)) return false;
+            if (frameIdx < 0 || frameIdx >= list.Count) return false;
+            euler = list[frameIdx];
+            return true;
+        }
         public override List<Limb> GetLimbs()
         {
             List<Limb> limbList = new List<Limb>();
@@ -207,5 +283,67 @@ namespace Xsens
         {
             return descriptiveName;
         }
+
+        // Returns the first label that exists in jointsByName.
+        // Tries each candidate as-is and with a leading 'j' prefix.
+        // Try candidates as-is and with a 'j' prefix; require full-length positions.
+        private string? ResolveExistingLabelWithData(IEnumerable<string> candidates)
+        {
+            foreach (var c in candidates)
+            {
+                if (string.IsNullOrWhiteSpace(c)) continue;
+
+                // exact
+                if (jointsByName.TryGetValue(c, out var j) && j.positions.Count == postureTimeSteps.Count)
+                    return c;
+
+                // try with 'j' prefix if missing
+                if (c[0] != 'j')
+                {
+                    var jp = "j" + c;
+                    if (jointsByName.TryGetValue(jp, out var jj) && jj.positions.Count == postureTimeSteps.Count)
+                        return jp;
+                }
+            }
+            return null;
+        }
+
+        private void MapJointSmart(JointID id, params string[] candidates)
+        {
+            // First pass: direct candidates (exact + 'j' variants)
+            var found = ResolveExistingLabelWithData(candidates);
+            if (found != null) { jointIdToNameMap[id] = found; return; }
+
+            // Second pass: common aliases (C7T1<->T1C7, add C6C7 as last resort; L3L4<->L4L3; T12L1<->L1T12)
+            var aliasList = new List<string>();
+            foreach (var c in candidates)
+            {
+                if (string.IsNullOrWhiteSpace(c)) continue;
+                if (c.Contains("C7T1")) { aliasList.Add("T1C7"); aliasList.Add("C6C7"); }
+                if (c.Contains("T1C7")) { aliasList.Add("C7T1"); aliasList.Add("C6C7"); }
+                if (c.Contains("L3L4")) aliasList.Add("L4L3");
+                if (c.Contains("L4L3")) aliasList.Add("L3L4");
+                if (c.Contains("T12L1")) aliasList.Add("L1T12");
+                if (c.Contains("L1T12")) aliasList.Add("T12L1");
+            }
+
+            found = ResolveExistingLabelWithData(aliasList);
+            if (found != null) { jointIdToNameMap[id] = found; return; }
+
+            // Leave unmapped; HasJoint() will correctly return false.
+        }
+
+        private void DebugLogMissingMap(JointID id, string purpose = "")
+        {
+            try
+            {
+                System.Diagnostics.Debug.Print(
+                    $"[XSENS] Missing map for {id}{(string.IsNullOrEmpty(purpose) ? "" : $" ({purpose})")}. " +
+                    $"Available labels: {string.Join(", ", jointsByName.Keys)}");
+            }
+            catch { /* best-effort logging only */ }
+        }
+
+
     }
 }
